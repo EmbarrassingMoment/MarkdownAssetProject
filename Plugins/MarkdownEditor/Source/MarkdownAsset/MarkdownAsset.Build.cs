@@ -1,4 +1,5 @@
 using UnrealBuildTool;
+using System.IO;
 
 public class MarkdownAsset : ModuleRules
 {
@@ -14,5 +15,7 @@ public class MarkdownAsset : ModuleRules
 				"Engine"
 			}
 		);
+
+		PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "ThirdParty", "md4c"));
 	}
 }

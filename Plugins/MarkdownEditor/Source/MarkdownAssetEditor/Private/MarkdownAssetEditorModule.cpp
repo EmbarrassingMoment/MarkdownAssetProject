@@ -1,16 +1,35 @@
 #include "MarkdownAssetEditorModule.h"
+#include "MarkdownAssetActions.h"
+#include "AssetToolsModule.h"
+#include "IAssetTools.h"
 
 #define LOCTEXT_NAMESPACE "FMarkdownAssetEditorModule"
 
 void FMarkdownAssetEditorModule::StartupModule()
 {
-	// This code will execute after your module is loaded into memory; the exact timing is specified in the .uplugin file per-module
+	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
+
+	// Register custom asset category
+	MarkdownAssetCategoryBit = AssetTools.RegisterAdvancedAssetCategory(FName(TEXT("Markdown")), LOCTEXT("MarkdownAssetCategory", "Markdown"));
+
+	// Register asset actions
+	MarkdownAssetActions = MakeShareable(new FMarkdownAssetActions(MarkdownAssetCategoryBit));
+	AssetTools.RegisterAssetTypeActions(MarkdownAssetActions.ToSharedRef());
 }
 
 void FMarkdownAssetEditorModule::ShutdownModule()
 {
-	// This function may be called during shutdown to clean up your module.  For modules that support dynamic reloading,
-	// we call this function before unloading the module.
+	if (FModuleManager::Get().IsModuleLoaded("AssetTools"))
+	{
+		IAssetTools& AssetTools = FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools").Get();
+
+		if (MarkdownAssetActions.IsValid())
+		{
+			AssetTools.UnregisterAssetTypeActions(MarkdownAssetActions.ToSharedRef());
+		}
+	}
+
+	MarkdownAssetActions.Reset();
 }
 
 #undef LOCTEXT_NAMESPACE
