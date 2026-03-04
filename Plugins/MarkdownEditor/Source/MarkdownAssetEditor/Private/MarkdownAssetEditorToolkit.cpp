@@ -1,7 +1,7 @@
 #include "MarkdownAssetEditorToolkit.h"
 #include "MarkdownAsset.h"
 #include "Widgets/Docking/SDockTab.h"
-#include "Widgets/Text/SMultiLineEditableTextBox.h"
+#include "Widgets/Input/SMultiLineEditableTextBox.h"
 #include "Widgets/Text/SRichTextBlock.h"
 #include "Widgets/Layout/SScrollBox.h"
 #include "Widgets/Layout/SSplitter.h"
