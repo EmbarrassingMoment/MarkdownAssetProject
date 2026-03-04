@@ -14,7 +14,7 @@ const FName FMarkdownAssetEditorToolkit::MainTabId(TEXT("MarkdownAssetEditor_Mai
 
 void FMarkdownAssetEditorToolkit::RegisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager)
 {
-	WorkspaceMenuCategory = WorkspaceMenu::GetWorkspaceMenuStructure().GetLevelEditorCategory();
+	WorkspaceMenuCategory = WorkspaceMenu::GetMenuStructure().GetLevelEditorCategory();
 
 	FAssetEditorToolkit::RegisterTabSpawners(InTabManager);
 
