@@ -5,7 +5,7 @@
 	"FriendlyName": "MarkdownEditor",
 	"Description": "",
 	"Category": "Other",
-	"CreatedBy": "Kurorekishi",
+	"CreatedBy": "",
 	"CreatedByURL": "",
 	"DocsURL": "",
 	"MarketplaceURL": "",
@@ -18,14 +18,12 @@
 		{
 			"Name": "MarkdownAsset",
 			"Type": "Runtime",
-			"LoadingPhase": "Default",
-			"PlatformAllowList": [ "Win64", "Mac", "Linux" ]
+			"LoadingPhase": "Default"
 		},
 		{
 			"Name": "MarkdownAssetEditor",
 			"Type": "Editor",
-			"LoadingPhase": "PostEngineInit",
-			"PlatformAllowList": [ "Win64", "Mac", "Linux" ]
+			"LoadingPhase": "PostEngineInit"
 		}
 	]
 }
