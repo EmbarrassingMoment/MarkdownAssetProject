@@ -104,9 +104,12 @@ void FMarkdownAssetEditorToolkit::OnTextChanged(const FText& NewText)
 		if (WebBrowserWidget.IsValid())
 		{
 			FString ParsedHtml = MarkdownAsset->GetParsedHTML();
-			FString HtmlContent = GenerateStyledHtml(ParsedHtml);
-			FString Base64Html = FBase64::Encode(HtmlContent);
+			FString StyledHtml = GenerateStyledHtml(ParsedHtml);
+
+			// Encode to Base64 and load as a Data URL
+			FString Base64Html = FBase64::Encode(StyledHtml);
 			FString DataUrl = FString::Printf(TEXT("data:text/html;base64,%s"), *Base64Html);
+
 			WebBrowserWidget->LoadURL(DataUrl);
 		}
 	}
@@ -138,16 +141,13 @@ TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabA
 			.Value(0.5f)
 			[
 				SAssignNew(WebBrowserWidget, SWebBrowser)
-				.InitialURL(TEXT("about:blank"))
 			]
 		];
 
+	// Force initial update to populate the browser
 	if (WebBrowserWidget.IsValid() && MarkdownAsset)
 	{
-		FString InitialHtml = GenerateStyledHtml(MarkdownAsset->GetParsedHTML());
-		FString Base64Html = FBase64::Encode(InitialHtml);
-		FString DataUrl = FString::Printf(TEXT("data:text/html;base64,%s"), *Base64Html);
-		WebBrowserWidget->LoadURL(DataUrl);
+		OnTextChanged(InitialText);
 	}
 
 	return SpawnedTab;
