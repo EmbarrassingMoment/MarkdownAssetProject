@@ -25,7 +25,8 @@ public class MarkdownAssetEditor : ModuleRules
 				"InputCore",
 				"AssetTools",
 				"EditorStyle",
-				"WorkspaceMenuStructure"
+				"WorkspaceMenuStructure",
+				"WebBrowser"
 			}
 		);
 	}

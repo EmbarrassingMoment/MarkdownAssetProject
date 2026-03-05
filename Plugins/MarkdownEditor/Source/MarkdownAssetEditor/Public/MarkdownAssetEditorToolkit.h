@@ -5,7 +5,7 @@
 
 class UMarkdownAsset;
 class SMultiLineEditableTextBox;
-class SRichTextBlock;
+class SWebBrowser;
 
 class FMarkdownAssetEditorToolkit : public FAssetEditorToolkit
 {
@@ -28,7 +28,7 @@ private:
 	UMarkdownAsset* MarkdownAsset;
 
 	TSharedPtr<SMultiLineEditableTextBox> EditableTextBox;
-	TSharedPtr<SRichTextBlock> RichTextBlock;
+	TSharedPtr<SWebBrowser> WebBrowserWidget;
 
 	static const FName AppIdentifier;
 	static const FName MainTabId;

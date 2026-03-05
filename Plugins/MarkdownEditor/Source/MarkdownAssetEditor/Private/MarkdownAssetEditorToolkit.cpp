@@ -8,6 +8,22 @@
 #include "Styling/CoreStyle.h"
 #include "WorkspaceMenuStructure.h"
 #include "WorkspaceMenuStructureModule.h"
+#include "SWebBrowser.h"
+#include "Misc/Base64.h"
+
+static FString GenerateStyledHtml(const FString& ParsedHtml)
+{
+	return FString::Printf(TEXT(
+		"<!DOCTYPE html>\n"
+		"<html><head><style>\n"
+		"body { font-family: 'Segoe UI', sans-serif; background-color: #1e1e1e; color: #cccccc; padding: 20px; }\n"
+		"h1, h2, h3, h4, h5, h6 { color: #ffffff; border-bottom: 1px solid #444; padding-bottom: 5px; }\n"
+		"code { background-color: #2d2d2d; padding: 2px 4px; border-radius: 4px; }\n"
+		"pre { background-color: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }\n"
+		"a { color: #3794ff; }\n"
+		"</style></head><body>\n%s\n</body></html>"
+	), *ParsedHtml);
+}
 
 const FName FMarkdownAssetEditorToolkit::AppIdentifier(TEXT("MarkdownAssetEditorApp"));
 const FName FMarkdownAssetEditorToolkit::MainTabId(TEXT("MarkdownAssetEditor_MainTab"));
@@ -85,9 +101,16 @@ void FMarkdownAssetEditorToolkit::OnTextChanged(const FText& NewText)
 		MarkdownAsset->RawMarkdownText = NewText.ToString();
 		MarkdownAsset->MarkPackageDirty();
 
-		if (RichTextBlock.IsValid())
+		if (WebBrowserWidget.IsValid())
 		{
-			RichTextBlock->SetText(FText::FromString(MarkdownAsset->GetParsedHTML()));
+			FString ParsedHtml = MarkdownAsset->GetParsedHTML();
+			FString StyledHtml = GenerateStyledHtml(ParsedHtml);
+
+			// Encode to Base64 and load as a Data URL
+			FString Base64Html = FBase64::Encode(StyledHtml);
+			FString DataUrl = FString::Printf(TEXT("data:text/html;base64,%s"), *Base64Html);
+
+			WebBrowserWidget->LoadURL(DataUrl);
 		}
 	}
 }
@@ -95,9 +118,8 @@ void FMarkdownAssetEditorToolkit::OnTextChanged(const FText& NewText)
 TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabArgs& Args)
 {
 	FText InitialText = MarkdownAsset ? FText::FromString(MarkdownAsset->RawMarkdownText) : FText::GetEmpty();
-	FText InitialHTML = MarkdownAsset ? FText::FromString(MarkdownAsset->GetParsedHTML()) : FText::GetEmpty();
 
-	return SNew(SDockTab)
+	TSharedRef<SDockTab> SpawnedTab = SNew(SDockTab)
 		.Label(FText::FromString("Markdown Editor"))
 		.TabRole(ETabRole::DocumentTab)
 		[
@@ -118,12 +140,15 @@ TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabA
 			+ SSplitter::Slot()
 			.Value(0.5f)
 			[
-				SNew(SScrollBox)
-				+ SScrollBox::Slot()
-				[
-					SAssignNew(RichTextBlock, SRichTextBlock)
-					.Text(InitialHTML)
-				]
+				SAssignNew(WebBrowserWidget, SWebBrowser)
 			]
 		];
+
+	// Force initial update to populate the browser
+	if (WebBrowserWidget.IsValid() && MarkdownAsset)
+	{
+		OnTextChanged(InitialText);
+	}
+
+	return SpawnedTab;
 }
