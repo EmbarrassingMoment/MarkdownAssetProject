@@ -10,6 +10,19 @@
 #include "WorkspaceMenuStructureModule.h"
 #include "SWebBrowser.h"
 
+static FString GenerateStyledHtml(const FString& ParsedHtml)
+{
+	return FString::Printf(TEXT(
+		"<html><head><style>"
+		"body { font-family: 'Segoe UI', sans-serif; background-color: #1e1e1e; color: #cccccc; padding: 20px; }"
+		"h1, h2, h3, h4, h5, h6 { color: #ffffff; border-bottom: 1px solid #444; padding-bottom: 5px; }"
+		"code { background-color: #2d2d2d; padding: 2px 4px; border-radius: 4px; }"
+		"pre { background-color: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }"
+		"a { color: #3794ff; }"
+		"</style></head><body>%s</body></html>"
+	), *ParsedHtml);
+}
+
 const FName FMarkdownAssetEditorToolkit::AppIdentifier(TEXT("MarkdownAssetEditorApp"));
 const FName FMarkdownAssetEditorToolkit::MainTabId(TEXT("MarkdownAssetEditor_MainTab"));
 
@@ -89,17 +102,7 @@ void FMarkdownAssetEditorToolkit::OnTextChanged(const FText& NewText)
 		if (WebBrowserWidget.IsValid())
 		{
 			FString ParsedHtml = MarkdownAsset->GetParsedHTML();
-			FString StyledHtml = FString::Printf(TEXT(
-				"<html><head><style>"
-				"body { font-family: 'Segoe UI', sans-serif; background-color: #1e1e1e; color: #cccccc; padding: 20px; }"
-				"h1, h2, h3, h4, h5, h6 { color: #ffffff; border-bottom: 1px solid #444; padding-bottom: 5px; }"
-				"code { background-color: #2d2d2d; padding: 2px 4px; border-radius: 4px; }"
-				"pre { background-color: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }"
-				"a { color: #3794ff; }"
-				"</style></head><body>%s</body></html>"
-			), *ParsedHtml);
-
-			WebBrowserWidget->LoadString(StyledHtml, TEXT("dummy://url"));
+			WebBrowserWidget->LoadString(GenerateStyledHtml(ParsedHtml), TEXT("about:blank"));
 		}
 	}
 }
@@ -107,9 +110,8 @@ void FMarkdownAssetEditorToolkit::OnTextChanged(const FText& NewText)
 TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabArgs& Args)
 {
 	FText InitialText = MarkdownAsset ? FText::FromString(MarkdownAsset->RawMarkdownText) : FText::GetEmpty();
-	FText InitialHTML = MarkdownAsset ? FText::FromString(MarkdownAsset->GetParsedHTML()) : FText::GetEmpty();
 
-	return SNew(SDockTab)
+	TSharedRef<SDockTab> SpawnedTab = SNew(SDockTab)
 		.Label(FText::FromString("Markdown Editor"))
 		.TabRole(ETabRole::DocumentTab)
 		[
@@ -134,4 +136,12 @@ TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabA
 				.InitialURL(TEXT("about:blank"))
 			]
 		];
+
+	if (WebBrowserWidget.IsValid() && MarkdownAsset)
+	{
+		FString InitialHtml = GenerateStyledHtml(MarkdownAsset->GetParsedHTML());
+		WebBrowserWidget->LoadString(InitialHtml, TEXT("about:blank"));
+	}
+
+	return SpawnedTab;
 }
