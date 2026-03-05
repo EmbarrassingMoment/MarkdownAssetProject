@@ -22,8 +22,10 @@ public class MarkdownAssetEditor : ModuleRules
 				"UnrealEd",
 				"Slate",
 				"SlateCore",
+				"InputCore",
 				"AssetTools",
-				"EditorStyle"
+				"EditorStyle",
+				"WorkspaceMenuStructure"
 			}
 		);
 	}
