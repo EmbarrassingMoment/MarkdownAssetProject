@@ -9,17 +9,19 @@
 #include "WorkspaceMenuStructure.h"
 #include "WorkspaceMenuStructureModule.h"
 #include "SWebBrowser.h"
+#include "Misc/Base64.h"
 
 static FString GenerateStyledHtml(const FString& ParsedHtml)
 {
 	return FString::Printf(TEXT(
-		"<html><head><style>"
-		"body { font-family: 'Segoe UI', sans-serif; background-color: #1e1e1e; color: #cccccc; padding: 20px; }"
-		"h1, h2, h3, h4, h5, h6 { color: #ffffff; border-bottom: 1px solid #444; padding-bottom: 5px; }"
-		"code { background-color: #2d2d2d; padding: 2px 4px; border-radius: 4px; }"
-		"pre { background-color: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }"
-		"a { color: #3794ff; }"
-		"</style></head><body>%s</body></html>"
+		"<!DOCTYPE html>\n"
+		"<html><head><style>\n"
+		"body { font-family: 'Segoe UI', sans-serif; background-color: #1e1e1e; color: #cccccc; padding: 20px; }\n"
+		"h1, h2, h3, h4, h5, h6 { color: #ffffff; border-bottom: 1px solid #444; padding-bottom: 5px; }\n"
+		"code { background-color: #2d2d2d; padding: 2px 4px; border-radius: 4px; }\n"
+		"pre { background-color: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }\n"
+		"a { color: #3794ff; }\n"
+		"</style></head><body>\n%s\n</body></html>"
 	), *ParsedHtml);
 }
 
@@ -102,7 +104,10 @@ void FMarkdownAssetEditorToolkit::OnTextChanged(const FText& NewText)
 		if (WebBrowserWidget.IsValid())
 		{
 			FString ParsedHtml = MarkdownAsset->GetParsedHTML();
-			WebBrowserWidget->LoadString(GenerateStyledHtml(ParsedHtml), TEXT("about:blank"));
+			FString HtmlContent = GenerateStyledHtml(ParsedHtml);
+			FString Base64Html = FBase64::Encode(HtmlContent);
+			FString DataUrl = FString::Printf(TEXT("data:text/html;base64,%s"), *Base64Html);
+			WebBrowserWidget->LoadURL(DataUrl);
 		}
 	}
 }
@@ -140,7 +145,9 @@ TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabA
 	if (WebBrowserWidget.IsValid() && MarkdownAsset)
 	{
 		FString InitialHtml = GenerateStyledHtml(MarkdownAsset->GetParsedHTML());
-		WebBrowserWidget->LoadString(InitialHtml, TEXT("about:blank"));
+		FString Base64Html = FBase64::Encode(InitialHtml);
+		FString DataUrl = FString::Printf(TEXT("data:text/html;base64,%s"), *Base64Html);
+		WebBrowserWidget->LoadURL(DataUrl);
 	}
 
 	return SpawnedTab;
