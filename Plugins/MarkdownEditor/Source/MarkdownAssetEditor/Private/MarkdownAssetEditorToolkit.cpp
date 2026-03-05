@@ -8,6 +8,7 @@
 #include "Styling/CoreStyle.h"
 #include "WorkspaceMenuStructure.h"
 #include "WorkspaceMenuStructureModule.h"
+#include "SWebBrowser.h"
 
 const FName FMarkdownAssetEditorToolkit::AppIdentifier(TEXT("MarkdownAssetEditorApp"));
 const FName FMarkdownAssetEditorToolkit::MainTabId(TEXT("MarkdownAssetEditor_MainTab"));
@@ -85,9 +86,20 @@ void FMarkdownAssetEditorToolkit::OnTextChanged(const FText& NewText)
 		MarkdownAsset->RawMarkdownText = NewText.ToString();
 		MarkdownAsset->MarkPackageDirty();
 
-		if (RichTextBlock.IsValid())
+		if (WebBrowserWidget.IsValid())
 		{
-			RichTextBlock->SetText(FText::FromString(MarkdownAsset->GetParsedHTML()));
+			FString ParsedHtml = MarkdownAsset->GetParsedHTML();
+			FString StyledHtml = FString::Printf(TEXT(
+				"<html><head><style>"
+				"body { font-family: 'Segoe UI', sans-serif; background-color: #1e1e1e; color: #cccccc; padding: 20px; }"
+				"h1, h2, h3, h4, h5, h6 { color: #ffffff; border-bottom: 1px solid #444; padding-bottom: 5px; }"
+				"code { background-color: #2d2d2d; padding: 2px 4px; border-radius: 4px; }"
+				"pre { background-color: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }"
+				"a { color: #3794ff; }"
+				"</style></head><body>%s</body></html>"
+			), *ParsedHtml);
+
+			WebBrowserWidget->LoadString(StyledHtml, TEXT("dummy://url"));
 		}
 	}
 }
@@ -118,12 +130,8 @@ TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabA
 			+ SSplitter::Slot()
 			.Value(0.5f)
 			[
-				SNew(SScrollBox)
-				+ SScrollBox::Slot()
-				[
-					SAssignNew(RichTextBlock, SRichTextBlock)
-					.Text(InitialHTML)
-				]
+				SAssignNew(WebBrowserWidget, SWebBrowser)
+				.InitialURL(TEXT("about:blank"))
 			]
 		];
 }
