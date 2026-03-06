@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Kurorekishi (EmbarrassingMoment).
+
 #include "MarkdownAssetActions.h"
 #include "MarkdownAsset.h"
 #include "MarkdownAssetEditorToolkit.h"

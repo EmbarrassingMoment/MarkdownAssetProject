@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Kurorekishi (EmbarrassingMoment).
+
 #include "MarkdownAssetEditorToolkit.h"
 #include "MarkdownAsset.h"
 #include "Widgets/Docking/SDockTab.h"
