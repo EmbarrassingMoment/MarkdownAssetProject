@@ -144,6 +144,8 @@ TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabA
 			.Value(0.5f)
 			[
 				SAssignNew(WebBrowserWidget, SWebBrowser)
+				.ShowControls(false)
+				.ShowAddressBar(false)
 			]
 		];
 
