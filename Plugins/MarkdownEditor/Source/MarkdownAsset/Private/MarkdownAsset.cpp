@@ -1,3 +1,5 @@
+// Copyright (c) 2026 Kurorekishi (EmbarrassingMoment).
+
 #include "MarkdownAsset.h"
 
 extern "C" {
