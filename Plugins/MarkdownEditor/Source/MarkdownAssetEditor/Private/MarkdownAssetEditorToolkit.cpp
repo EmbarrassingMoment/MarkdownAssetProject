@@ -15,7 +15,9 @@ static FString GenerateStyledHtml(const FString& ParsedHtml)
 {
 	return FString::Printf(TEXT(
 		"<!DOCTYPE html>\n"
-		"<html><head><style>\n"
+		"<html><head>\n"
+		"<meta charset=\"utf-8\">\n"
+		"<style>\n"
 		"body { font-family: 'Segoe UI', sans-serif; background-color: #1e1e1e; color: #cccccc; padding: 20px; }\n"
 		"h1, h2, h3, h4, h5, h6 { color: #ffffff; border-bottom: 1px solid #444; padding-bottom: 5px; }\n"
 		"code { background-color: #2d2d2d; padding: 2px 4px; border-radius: 4px; }\n"
@@ -106,8 +108,9 @@ void FMarkdownAssetEditorToolkit::OnTextChanged(const FText& NewText)
 			FString ParsedHtml = MarkdownAsset->GetParsedHTML();
 			FString StyledHtml = GenerateStyledHtml(ParsedHtml);
 
-			// Encode to Base64 and load as a Data URL
-			FString Base64Html = FBase64::Encode(StyledHtml);
+			// Explicitly convert FString (UTF-16) to UTF-8 bytes before Base64 encoding
+			FTCHARToUTF8 Utf8Html(*StyledHtml);
+			FString Base64Html = FBase64::Encode((uint8*)Utf8Html.Get(), Utf8Html.Length());
 			FString DataUrl = FString::Printf(TEXT("data:text/html;base64,%s"), *Base64Html);
 
 			WebBrowserWidget->LoadURL(DataUrl);
