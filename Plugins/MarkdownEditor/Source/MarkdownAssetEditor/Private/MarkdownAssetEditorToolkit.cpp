@@ -36,6 +36,14 @@ static FString GenerateStyledHtml(const FString& ParsedHtml)
 const FName FMarkdownAssetEditorToolkit::AppIdentifier(TEXT("MarkdownAssetEditorApp"));
 const FName FMarkdownAssetEditorToolkit::MainTabId(TEXT("MarkdownAssetEditor_MainTab"));
 
+FMarkdownAssetEditorToolkit::~FMarkdownAssetEditorToolkit()
+{
+	if (GEditor)
+	{
+		GEditor->GetTimerManager()->ClearTimer(PreviewUpdateTimerHandle);
+	}
+}
+
 void FMarkdownAssetEditorToolkit::RegisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager)
 {
 	WorkspaceMenuCategory = WorkspaceMenu::GetMenuStructure().GetLevelEditorCategory();
@@ -109,18 +117,32 @@ void FMarkdownAssetEditorToolkit::OnTextChanged(const FText& NewText)
 		MarkdownAsset->RawMarkdownText = NewText.ToString();
 		MarkdownAsset->MarkPackageDirty();
 
-		if (WebBrowserWidget.IsValid())
+		if (GEditor)
 		{
-			FString ParsedHtml = MarkdownAsset->GetParsedHTML();
-			FString StyledHtml = GenerateStyledHtml(ParsedHtml);
-
-			// Explicitly convert FString (UTF-16) to UTF-8 bytes before Base64 encoding
-			FTCHARToUTF8 Utf8Html(*StyledHtml);
-			FString Base64Html = FBase64::Encode((uint8*)Utf8Html.Get(), Utf8Html.Length());
-			FString DataUrl = FString::Printf(TEXT("data:text/html;base64,%s"), *Base64Html);
-
-			WebBrowserWidget->LoadURL(DataUrl);
+			GEditor->GetTimerManager()->ClearTimer(PreviewUpdateTimerHandle);
+			GEditor->GetTimerManager()->SetTimer(
+				PreviewUpdateTimerHandle,
+				FTimerDelegate::CreateSP(this, &FMarkdownAssetEditorToolkit::UpdatePreview),
+				0.3f,
+				false
+			);
 		}
+	}
+}
+
+void FMarkdownAssetEditorToolkit::UpdatePreview()
+{
+	if (MarkdownAsset && WebBrowserWidget.IsValid())
+	{
+		FString ParsedHtml = MarkdownAsset->GetParsedHTML();
+		FString StyledHtml = GenerateStyledHtml(ParsedHtml);
+
+		// Explicitly convert FString (UTF-16) to UTF-8 bytes before Base64 encoding
+		FTCHARToUTF8 Utf8Html(*StyledHtml);
+		FString Base64Html = FBase64::Encode((uint8*)Utf8Html.Get(), Utf8Html.Length());
+		FString DataUrl = FString::Printf(TEXT("data:text/html;base64,%s"), *Base64Html);
+
+		WebBrowserWidget->LoadURL(DataUrl);
 	}
 }
 
@@ -158,7 +180,7 @@ TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabA
 	// Force initial update to populate the browser
 	if (WebBrowserWidget.IsValid() && MarkdownAsset)
 	{
-		OnTextChanged(InitialText);
+		UpdatePreview();
 	}
 
 	return SpawnedTab;
