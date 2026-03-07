@@ -33,7 +33,7 @@ FString UMarkdownAsset::GetParsedHTML() const
 	MD_SIZE MdSize = Utf8String.Length();
 
 	// Parse markdown to HTML
-	md_html(MdInput, MdSize, MarkdownHtmlProcessOutputCallback, &OutputHtml, 0, 0);
+	md_html(MdInput, MdSize, MarkdownHtmlProcessOutputCallback, &OutputHtml, MD_DIALECT_GITHUB, 0);
 
 	return OutputHtml;
 }
