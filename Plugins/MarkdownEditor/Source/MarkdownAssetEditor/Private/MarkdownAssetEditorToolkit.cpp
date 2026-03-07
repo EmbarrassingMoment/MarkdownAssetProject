@@ -25,6 +25,10 @@ static FString GenerateStyledHtml(const FString& ParsedHtml)
 		"code { background-color: #2d2d2d; padding: 2px 4px; border-radius: 4px; }\n"
 		"pre { background-color: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }\n"
 		"a { color: #3794ff; }\n"
+		"table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }\n"
+		"th, td { border: 1px solid #444; padding: 8px 12px; text-align: left; }\n"
+		"th { background-color: #333; color: #fff; font-weight: bold; }\n"
+		"tr:nth-child(even) { background-color: #2a2a2a; }\n"
 		"</style></head><body>\n%s\n</body></html>"
 	), *ParsedHtml);
 }
