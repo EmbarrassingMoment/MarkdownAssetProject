@@ -24,7 +24,7 @@ An Unreal Engine 5.5 plugin that adds a custom Markdown asset type with a live-p
 
 ## Usage
 
-1. In the Content Browser, right-click and select **Miscellaneous > Markdown Asset** to create a new asset.
+1. In the Content Browser, right-click and select **Miscellaneous > Markdown Text** to create a new asset.
 2. Double-click the asset to open the Markdown editor.
 3. Write Markdown in the left pane — the right pane updates the HTML preview in real time.
 
