@@ -4,6 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "Toolkits/AssetEditorToolkit.h"
+#include "TimerManager.h"
+#include "Editor.h"
 
 class UMarkdownAsset;
 class SMultiLineEditableTextBox;
@@ -12,6 +14,8 @@ class SWebBrowser;
 class FMarkdownAssetEditorToolkit : public FAssetEditorToolkit
 {
 public:
+	virtual ~FMarkdownAssetEditorToolkit();
+
 	virtual void RegisterTabSpawners(const TSharedRef<class FTabManager>& TabManager) override;
 	virtual void UnregisterTabSpawners(const TSharedRef<class FTabManager>& TabManager) override;
 
@@ -25,7 +29,10 @@ public:
 
 private:
 	void OnTextChanged(const FText& NewText);
+	void UpdatePreview();
 	TSharedRef<SDockTab> SpawnTab_Main(const FSpawnTabArgs& Args);
+
+	FTimerHandle PreviewUpdateTimerHandle;
 
 	UMarkdownAsset* MarkdownAsset;
 
