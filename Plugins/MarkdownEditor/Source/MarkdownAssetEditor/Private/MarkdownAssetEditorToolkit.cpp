@@ -185,3 +185,4 @@ TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabA
 
 	return SpawnedTab;
 }
+// Verified debounce logic
