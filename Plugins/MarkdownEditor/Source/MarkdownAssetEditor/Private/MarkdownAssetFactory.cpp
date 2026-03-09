@@ -7,6 +7,7 @@ UMarkdownAssetFactory::UMarkdownAssetFactory()
 {
 	bCreateNew = true;
 	bEditAfterNew = true;
+	bEditorImport = false;
 	SupportedClass = UMarkdownAsset::StaticClass();
 }
 
