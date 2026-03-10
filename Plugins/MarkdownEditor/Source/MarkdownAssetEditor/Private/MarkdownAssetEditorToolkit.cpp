@@ -271,7 +271,7 @@ void FMarkdownAssetEditorToolkit::AddCenteredToolBarButton(FToolBarBuilder& Tool
 				.Font(FCoreStyle::GetDefaultFontStyle("Bold", 10))
 			]
 		],
-		Label
+		FName(*Label.ToString())
 	);
 }
 
