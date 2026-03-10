@@ -4,7 +4,10 @@
 #include "MarkdownAsset.h"
 #include "Widgets/Docking/SDockTab.h"
 #include "Widgets/Input/SMultiLineEditableTextBox.h"
+#include "Widgets/Input/SButton.h"
+#include "Widgets/Text/STextBlock.h"
 #include "Widgets/Text/SRichTextBlock.h"
+#include "Widgets/Layout/SBox.h"
 #include "Widgets/Layout/SScrollBox.h"
 #include "Widgets/Layout/SSplitter.h"
 #include "Styling/CoreStyle.h"
@@ -239,6 +242,39 @@ void FMarkdownAssetEditorToolkit::RegisterToolbar()
 	AddToolbarExtender(ToolbarExtender);
 }
 
+void FMarkdownAssetEditorToolkit::AddCenteredToolBarButton(FToolBarBuilder& ToolBarBuilder, const TSharedPtr<FUICommandInfo>& Command, const FText& Label)
+{
+	ToolBarBuilder.AddWidget(
+		SNew(SBox)
+		.WidthOverride(50.0f)
+		.HeightOverride(28.0f)
+		.HAlign(HAlign_Center)
+		.VAlign(VAlign_Center)
+		[
+			SNew(SButton)
+			.ButtonStyle(FAppStyle::Get(), "SimpleButton")
+			.OnClicked_Lambda([this, Command]() -> FReply
+			{
+				if (ToolkitCommands.IsValid())
+				{
+					ToolkitCommands->ExecuteAction(Command.ToSharedRef());
+				}
+				return FReply::Handled();
+			})
+			.ToolTipText(Command->GetDescription())
+			.HAlign(HAlign_Center)
+			.VAlign(VAlign_Center)
+			[
+				SNew(STextBlock)
+				.Text(Label)
+				.Justification(ETextJustify::Center)
+				.Font(FCoreStyle::GetDefaultFontStyle("Bold", 10))
+			]
+		],
+		Label
+	);
+}
+
 void FMarkdownAssetEditorToolkit::ExtendToolbar(FToolBarBuilder& ToolBarBuilder)
 {
 	const FMarkdownEditorCommands& Commands = FMarkdownEditorCommands::Get();
@@ -246,32 +282,32 @@ void FMarkdownAssetEditorToolkit::ExtendToolbar(FToolBarBuilder& ToolBarBuilder)
 	ToolBarBuilder.AddSeparator();
 
 	// Headings
-	ToolBarBuilder.AddToolBarButton(Commands.Heading1);
-	ToolBarBuilder.AddToolBarButton(Commands.Heading2);
-	ToolBarBuilder.AddToolBarButton(Commands.Heading3);
+	AddCenteredToolBarButton(ToolBarBuilder, Commands.Heading1, LOCTEXT("H1", "H1"));
+	AddCenteredToolBarButton(ToolBarBuilder, Commands.Heading2, LOCTEXT("H2", "H2"));
+	AddCenteredToolBarButton(ToolBarBuilder, Commands.Heading3, LOCTEXT("H3", "H3"));
 
 	ToolBarBuilder.AddSeparator();
 
 	// Text formatting
-	ToolBarBuilder.AddToolBarButton(Commands.Bold);
-	ToolBarBuilder.AddToolBarButton(Commands.Italic);
-	ToolBarBuilder.AddToolBarButton(Commands.Strikethrough);
+	AddCenteredToolBarButton(ToolBarBuilder, Commands.Bold, LOCTEXT("Bold", "B"));
+	AddCenteredToolBarButton(ToolBarBuilder, Commands.Italic, LOCTEXT("Italic", "I"));
+	AddCenteredToolBarButton(ToolBarBuilder, Commands.Strikethrough, LOCTEXT("Strikethrough", "S"));
 
 	ToolBarBuilder.AddSeparator();
 
 	// Insert elements
-	ToolBarBuilder.AddToolBarButton(Commands.InsertLink);
-	ToolBarBuilder.AddToolBarButton(Commands.InsertImage);
-	ToolBarBuilder.AddToolBarButton(Commands.InsertCodeBlock);
-	ToolBarBuilder.AddToolBarButton(Commands.Blockquote);
+	AddCenteredToolBarButton(ToolBarBuilder, Commands.InsertLink, LOCTEXT("Link", "Link"));
+	AddCenteredToolBarButton(ToolBarBuilder, Commands.InsertImage, LOCTEXT("Image", "Img"));
+	AddCenteredToolBarButton(ToolBarBuilder, Commands.InsertCodeBlock, LOCTEXT("Code", "Code"));
+	AddCenteredToolBarButton(ToolBarBuilder, Commands.Blockquote, LOCTEXT("Quote", "Quote"));
 
 	ToolBarBuilder.AddSeparator();
 
 	// Lists and structure
-	ToolBarBuilder.AddToolBarButton(Commands.BulletList);
-	ToolBarBuilder.AddToolBarButton(Commands.NumberedList);
-	ToolBarBuilder.AddToolBarButton(Commands.InsertTable);
-	ToolBarBuilder.AddToolBarButton(Commands.HorizontalRule);
+	AddCenteredToolBarButton(ToolBarBuilder, Commands.BulletList, LOCTEXT("BulletList", "List"));
+	AddCenteredToolBarButton(ToolBarBuilder, Commands.NumberedList, LOCTEXT("NumberedList", "1."));
+	AddCenteredToolBarButton(ToolBarBuilder, Commands.InsertTable, LOCTEXT("Table", "Table"));
+	AddCenteredToolBarButton(ToolBarBuilder, Commands.HorizontalRule, LOCTEXT("HR", "HR"));
 }
 
 // ---- Markdown Formatting Helpers ----

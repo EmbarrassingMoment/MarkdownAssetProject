@@ -64,6 +64,7 @@ private:
 	void RegisterToolbar();
 	void BindCommands();
 	void ExtendToolbar(FToolBarBuilder& ToolBarBuilder);
+	void AddCenteredToolBarButton(FToolBarBuilder& ToolBarBuilder, const TSharedPtr<FUICommandInfo>& Command, const FText& Label);
 
 	// Markdown formatting helpers
 	void WrapSelectionWith(const FString& Prefix, const FString& Suffix);
