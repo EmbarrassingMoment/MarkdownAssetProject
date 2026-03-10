@@ -26,7 +26,7 @@ public class MarkdownAssetEditor : ModuleRules
 				"SlateCore",
 				"InputCore",
 				"AssetTools",
-				"EditorStyle",
+				"AppFramework",
 				"WorkspaceMenuStructure",
 				"WebBrowser"
 			}
