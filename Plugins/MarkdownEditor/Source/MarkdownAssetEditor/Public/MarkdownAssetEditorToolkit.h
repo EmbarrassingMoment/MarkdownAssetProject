@@ -25,7 +25,6 @@ public:
 
 	TSharedPtr<FUICommandInfo> Bold;
 	TSharedPtr<FUICommandInfo> Italic;
-	TSharedPtr<FUICommandInfo> InsertLink;
 	TSharedPtr<FUICommandInfo> InsertCodeBlock;
 	TSharedPtr<FUICommandInfo> Heading1;
 	TSharedPtr<FUICommandInfo> Heading2;
@@ -34,7 +33,6 @@ public:
 	TSharedPtr<FUICommandInfo> NumberedList;
 	TSharedPtr<FUICommandInfo> InsertTable;
 	TSharedPtr<FUICommandInfo> Strikethrough;
-	TSharedPtr<FUICommandInfo> InsertImage;
 	TSharedPtr<FUICommandInfo> HorizontalRule;
 	TSharedPtr<FUICommandInfo> Blockquote;
 };
@@ -75,7 +73,6 @@ private:
 	void OnBold();
 	void OnItalic();
 	void OnStrikethrough();
-	void OnInsertLink();
 	void OnInsertCodeBlock();
 	void OnHeading1();
 	void OnHeading2();
@@ -83,7 +80,6 @@ private:
 	void OnBulletList();
 	void OnNumberedList();
 	void OnInsertTable();
-	void OnInsertImage();
 	void OnHorizontalRule();
 	void OnBlockquote();
 

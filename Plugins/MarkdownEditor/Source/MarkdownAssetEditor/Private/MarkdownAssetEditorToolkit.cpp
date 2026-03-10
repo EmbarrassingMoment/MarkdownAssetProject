@@ -63,7 +63,6 @@ void FMarkdownEditorCommands::RegisterCommands()
 	UI_COMMAND(Bold, "Bold", "Wrap selection with bold markers (**)", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control, EKeys::B));
 	UI_COMMAND(Italic, "Italic", "Wrap selection with italic markers (*)", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control, EKeys::I));
 	UI_COMMAND(Strikethrough, "Strikethrough", "Wrap selection with strikethrough markers (~~)", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control | EModifierKey::Shift, EKeys::X));
-	UI_COMMAND(InsertLink, "Link", "Insert a Markdown link", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control, EKeys::K));
 	UI_COMMAND(InsertCodeBlock, "Code Block", "Insert a fenced code block", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control | EModifierKey::Shift, EKeys::C));
 	UI_COMMAND(Heading1, "H1", "Insert heading level 1", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control, EKeys::One));
 	UI_COMMAND(Heading2, "H2", "Insert heading level 2", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control, EKeys::Two));
@@ -71,7 +70,6 @@ void FMarkdownEditorCommands::RegisterCommands()
 	UI_COMMAND(BulletList, "Bullet List", "Insert a bullet list item", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control | EModifierKey::Shift, EKeys::U));
 	UI_COMMAND(NumberedList, "Numbered List", "Insert a numbered list item", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control | EModifierKey::Shift, EKeys::O));
 	UI_COMMAND(InsertTable, "Table", "Insert a Markdown table", EUserInterfaceActionType::Button, FInputChord());
-	UI_COMMAND(InsertImage, "Image", "Insert a Markdown image reference", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(HorizontalRule, "Horizontal Rule", "Insert a horizontal rule", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(Blockquote, "Quote", "Insert a blockquote", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control | EModifierKey::Shift, EKeys::Q));
 }
@@ -215,7 +213,6 @@ void FMarkdownAssetEditorToolkit::BindCommands()
 	ToolkitCommands->MapAction(Commands.Bold, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnBold));
 	ToolkitCommands->MapAction(Commands.Italic, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnItalic));
 	ToolkitCommands->MapAction(Commands.Strikethrough, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnStrikethrough));
-	ToolkitCommands->MapAction(Commands.InsertLink, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnInsertLink));
 	ToolkitCommands->MapAction(Commands.InsertCodeBlock, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnInsertCodeBlock));
 	ToolkitCommands->MapAction(Commands.Heading1, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnHeading1));
 	ToolkitCommands->MapAction(Commands.Heading2, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnHeading2));
@@ -223,7 +220,6 @@ void FMarkdownAssetEditorToolkit::BindCommands()
 	ToolkitCommands->MapAction(Commands.BulletList, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnBulletList));
 	ToolkitCommands->MapAction(Commands.NumberedList, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnNumberedList));
 	ToolkitCommands->MapAction(Commands.InsertTable, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnInsertTable));
-	ToolkitCommands->MapAction(Commands.InsertImage, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnInsertImage));
 	ToolkitCommands->MapAction(Commands.HorizontalRule, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnHorizontalRule));
 	ToolkitCommands->MapAction(Commands.Blockquote, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnBlockquote));
 }
@@ -296,8 +292,6 @@ void FMarkdownAssetEditorToolkit::ExtendToolbar(FToolBarBuilder& ToolBarBuilder)
 	ToolBarBuilder.AddSeparator();
 
 	// Insert elements
-	AddCenteredToolBarButton(ToolBarBuilder, Commands.InsertLink, LOCTEXT("Link", "Link"));
-	AddCenteredToolBarButton(ToolBarBuilder, Commands.InsertImage, LOCTEXT("Image", "Img"));
 	AddCenteredToolBarButton(ToolBarBuilder, Commands.InsertCodeBlock, LOCTEXT("Code", "Code"));
 	AddCenteredToolBarButton(ToolBarBuilder, Commands.Blockquote, LOCTEXT("Quote", "Quote"));
 
@@ -381,17 +375,6 @@ void FMarkdownAssetEditorToolkit::OnStrikethrough()
 	WrapSelectionWith(TEXT("~~"), TEXT("~~"));
 }
 
-void FMarkdownAssetEditorToolkit::OnInsertLink()
-{
-	FString SelectedText = EditableTextBox.IsValid() ? EditableTextBox->GetSelectedText().ToString() : TEXT("");
-	if (SelectedText.IsEmpty())
-	{
-		SelectedText = TEXT("link text");
-	}
-	FString LinkText = FString::Printf(TEXT("[%s](url)"), *SelectedText);
-	InsertTextAtCursor(LinkText);
-}
-
 void FMarkdownAssetEditorToolkit::OnInsertCodeBlock()
 {
 	InsertTextAtCursor(TEXT("\n```\ncode\n```\n"));
@@ -425,11 +408,6 @@ void FMarkdownAssetEditorToolkit::OnNumberedList()
 void FMarkdownAssetEditorToolkit::OnInsertTable()
 {
 	InsertTextAtCursor(TEXT("\n| Header 1 | Header 2 | Header 3 |\n| --- | --- | --- |\n| Cell 1 | Cell 2 | Cell 3 |\n"));
-}
-
-void FMarkdownAssetEditorToolkit::OnInsertImage()
-{
-	InsertTextAtCursor(TEXT("![alt text](image_url)"));
 }
 
 void FMarkdownAssetEditorToolkit::OnHorizontalRule()
