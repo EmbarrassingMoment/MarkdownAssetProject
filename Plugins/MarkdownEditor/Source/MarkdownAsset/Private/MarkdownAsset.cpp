@@ -37,3 +37,33 @@ FString UMarkdownAsset::GetParsedHTML() const
 
 	return OutputHtml;
 }
+
+void UMarkdownAsset::PostInitProperties()
+{
+	Super::PostInitProperties();
+
+#if WITH_EDITORONLY_DATA
+	if (!HasAnyFlags(RF_ClassDefaultObject))
+	{
+		if (!AssetImportData)
+		{
+			AssetImportData = NewObject<UAssetImportData>(this, TEXT("AssetImportData"));
+		}
+	}
+#endif
+}
+
+void UMarkdownAsset::GetAssetRegistryTags(FAssetRegistryTagsContext Context) const
+{
+	Super::GetAssetRegistryTags(Context);
+
+#if WITH_EDITORONLY_DATA
+	if (AssetImportData)
+	{
+		Context.AddTag(FAssetRegistryTag(
+			SourceFileTagName(),
+			AssetImportData->GetSourceData().ToJson(),
+			FAssetRegistryTag::TT_Hidden));
+	}
+#endif
+}

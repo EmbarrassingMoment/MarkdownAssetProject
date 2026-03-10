@@ -4,6 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "UObject/NoExportTypes.h"
+#if WITH_EDITORONLY_DATA
+#include "EditorFramework/AssetImportData.h"
+#endif
 #include "MarkdownAsset.generated.h"
 
 /**
@@ -22,4 +25,13 @@ public:
 	/** Parses the raw Markdown text into an HTML string. */
 	UFUNCTION(BlueprintCallable, Category = "Markdown")
 	FString GetParsedHTML() const;
+
+#if WITH_EDITORONLY_DATA
+	UPROPERTY(VisibleAnywhere, Instanced, Category = "Import")
+	TObjectPtr<UAssetImportData> AssetImportData;
+#endif
+
+	// UObject interface
+	virtual void PostInitProperties() override;
+	virtual void GetAssetRegistryTags(FAssetRegistryTagsContext Context) const override;
 };

@@ -4,13 +4,14 @@
 
 #include "CoreMinimal.h"
 #include "Factories/Factory.h"
+#include "EditorReimportHandler.h"
 #include "MarkdownAssetImportFactory.generated.h"
 
 /**
  * Factory for importing UMarkdownAsset objects.
  */
 UCLASS()
-class MARKDOWNASSETEDITOR_API UMarkdownAssetImportFactory : public UFactory
+class MARKDOWNASSETEDITOR_API UMarkdownAssetImportFactory : public UFactory, public FReimportHandler
 {
 	GENERATED_BODY()
 
@@ -23,4 +24,9 @@ public:
 		EObjectFlags Flags, UObject* Context,
 		const TCHAR* Type, const TCHAR*& Buffer,
 		const TCHAR* BufferEnd, FFeedbackContext* Warn) override;
+
+	// FReimportHandler interface
+	virtual bool CanReimport(UObject* Obj, TArray<FString>& OutFilenames) override;
+	virtual void SetReimportPaths(UObject* Obj, const TArray<FString>& NewReimportPaths) override;
+	virtual EReimportResult::Type Reimport(UObject* Obj) override;
 };

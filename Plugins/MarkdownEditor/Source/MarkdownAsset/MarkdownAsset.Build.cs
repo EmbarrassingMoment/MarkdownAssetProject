@@ -19,5 +19,10 @@ public class MarkdownAsset : ModuleRules
 		);
 
 		PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "ThirdParty", "md4c"));
+
+		if (Target.bBuildEditor)
+		{
+			PrivateDependencyModuleNames.Add("UnrealEd");
+		}
 	}
 }
