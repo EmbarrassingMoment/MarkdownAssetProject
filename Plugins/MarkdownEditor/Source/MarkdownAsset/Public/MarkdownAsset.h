@@ -19,6 +19,12 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Markdown")
 	FString RawMarkdownText;
 
+#if WITH_EDITORONLY_DATA
+	/** The path to the file this asset was imported from. */
+	UPROPERTY(VisibleAnywhere, Category = "Import Settings")
+	FString SourceFilePath;
+#endif
+
 	/** Parses the raw Markdown text into an HTML string. */
 	UFUNCTION(BlueprintCallable, Category = "Markdown")
 	FString GetParsedHTML() const;
