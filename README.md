@@ -5,13 +5,31 @@ An Unreal Engine 5.5 plugin that adds a custom Markdown asset type with a live-p
 ## Features
 
 - **Custom Markdown Asset** — `UMarkdownAsset` stores raw Markdown text as a first-class UObject
-- **Live HTML Preview** — Dual-pane editor with a text editor on the left and a real-time HTML preview on the right
+- **Live HTML Preview** — Dual-pane editor with a text editor on the left and a real-time HTML preview on the right (updates with a 0.3-second debounce for smooth editing)
 - **md4c Integration** — Fast Markdown-to-HTML conversion powered by the embedded [md4c](https://github.com/mity/md4c) C library
 - **Dark Theme** — Styled HTML output with a dark background for comfortable reading
-- **Content Browser Integration** — Create new Markdown assets directly from the context menu
+- **Content Browser Integration** — Create new Markdown assets directly from the context menu, with custom thumbnail previews showing the "MD" label and the first few lines of content
 - **Import / Export** — Drag-and-drop `.md` / `.markdown` files into the Content Browser to import, reimport from source files, or export assets back to `.md`
 - **GitHub Flavored Markdown** — Supports GFM extensions such as tables, task lists, and strikethrough via the `MD_DIALECT_GITHUB` flag
 - **Blueprint Support** — Read/write `RawMarkdownText` and call `GetParsedHTML()` from Blueprints
+- **Toolbar & Keyboard Shortcuts** — Built-in formatting toolbar with keyboard shortcuts for common Markdown operations
+
+### Keyboard Shortcuts
+
+| Command | Shortcut |
+|---------|----------|
+| Bold | Ctrl+B |
+| Italic | Ctrl+I |
+| Strikethrough | Ctrl+Shift+X |
+| Code Block | Ctrl+Shift+C |
+| Heading 1 | Ctrl+1 |
+| Heading 2 | Ctrl+2 |
+| Heading 3 | Ctrl+3 |
+| Bullet List | Ctrl+Shift+U |
+| Numbered List | Ctrl+Shift+O |
+| Blockquote | Ctrl+Shift+Q |
+| Insert Table | — |
+| Horizontal Rule | — |
 
 ## Requirements
 
