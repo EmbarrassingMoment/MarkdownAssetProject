@@ -26,7 +26,7 @@ UClass* FMarkdownAssetActions::GetSupportedClass() const
 
 uint32 FMarkdownAssetActions::GetCategories()
 {
-	return EAssetTypeCategories::Misc;
+	return AssetCategory;
 }
 
 void FMarkdownAssetActions::OpenAssetEditor(const TArray<UObject*>& InObjects, TSharedPtr<class IToolkitHost> EditWithinLevelEditor)

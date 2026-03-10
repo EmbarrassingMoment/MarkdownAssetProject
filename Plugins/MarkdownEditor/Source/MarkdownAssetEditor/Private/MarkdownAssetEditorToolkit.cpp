@@ -12,6 +12,12 @@
 #include "WorkspaceMenuStructureModule.h"
 #include "SWebBrowser.h"
 #include "Misc/Base64.h"
+#include "ScopedTransaction.h"
+#include "Framework/MultiBox/MultiBoxBuilder.h"
+
+#define LOCTEXT_NAMESPACE "MarkdownAssetEditor"
+
+// ---- Styled HTML Generation ----
 
 static FString GenerateStyledHtml(const FString& ParsedHtml)
 {
@@ -25,19 +31,57 @@ static FString GenerateStyledHtml(const FString& ParsedHtml)
 		"code { background-color: #2d2d2d; padding: 2px 4px; border-radius: 4px; }\n"
 		"pre { background-color: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }\n"
 		"a { color: #3794ff; }\n"
-		"table { border-collapse: collapse; width: 100%; margin-bottom: 20px; }\n"
+		"table { border-collapse: collapse; width: 100%%; margin-bottom: 20px; }\n"
 		"th, td { border: 1px solid #444; padding: 8px 12px; text-align: left; }\n"
 		"th { background-color: #333; color: #fff; font-weight: bold; }\n"
 		"tr:nth-child(even) { background-color: #2a2a2a; }\n"
+		"blockquote { border-left: 4px solid #3794ff; margin: 10px 0; padding: 5px 15px; background-color: #252525; }\n"
+		"hr { border: none; border-top: 1px solid #444; margin: 20px 0; }\n"
+		"img { max-width: 100%%; height: auto; }\n"
+		"del { color: #888; }\n"
 		"</style></head><body>\n%s\n</body></html>"
 	), *ParsedHtml);
 }
+
+// ---- FMarkdownEditorCommands ----
+
+FMarkdownEditorCommands::FMarkdownEditorCommands()
+	: TCommands<FMarkdownEditorCommands>(
+		TEXT("MarkdownEditor"),
+		LOCTEXT("MarkdownEditorCommands", "Markdown Editor"),
+		NAME_None,
+		FAppStyle::GetAppStyleSetName()
+	)
+{
+}
+
+void FMarkdownEditorCommands::RegisterCommands()
+{
+	UI_COMMAND(Bold, "Bold", "Wrap selection with bold markers (**)", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control, EKeys::B));
+	UI_COMMAND(Italic, "Italic", "Wrap selection with italic markers (*)", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control, EKeys::I));
+	UI_COMMAND(Strikethrough, "Strikethrough", "Wrap selection with strikethrough markers (~~)", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control | EModifierKey::Shift, EKeys::X));
+	UI_COMMAND(InsertLink, "Link", "Insert a Markdown link", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control, EKeys::K));
+	UI_COMMAND(InsertCodeBlock, "Code Block", "Insert a fenced code block", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control | EModifierKey::Shift, EKeys::C));
+	UI_COMMAND(Heading1, "H1", "Insert heading level 1", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control, EKeys::One));
+	UI_COMMAND(Heading2, "H2", "Insert heading level 2", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control, EKeys::Two));
+	UI_COMMAND(Heading3, "H3", "Insert heading level 3", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control, EKeys::Three));
+	UI_COMMAND(BulletList, "Bullet List", "Insert a bullet list item", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control | EModifierKey::Shift, EKeys::U));
+	UI_COMMAND(NumberedList, "Numbered List", "Insert a numbered list item", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control | EModifierKey::Shift, EKeys::O));
+	UI_COMMAND(InsertTable, "Table", "Insert a Markdown table", EUserInterfaceActionType::Button, FInputChord());
+	UI_COMMAND(InsertImage, "Image", "Insert a Markdown image reference", EUserInterfaceActionType::Button, FInputChord());
+	UI_COMMAND(HorizontalRule, "Horizontal Rule", "Insert a horizontal rule", EUserInterfaceActionType::Button, FInputChord());
+	UI_COMMAND(Blockquote, "Quote", "Insert a blockquote", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control | EModifierKey::Shift, EKeys::Q));
+}
+
+// ---- FMarkdownAssetEditorToolkit ----
 
 const FName FMarkdownAssetEditorToolkit::AppIdentifier(TEXT("MarkdownAssetEditorApp"));
 const FName FMarkdownAssetEditorToolkit::MainTabId(TEXT("MarkdownAssetEditor_MainTab"));
 
 FMarkdownAssetEditorToolkit::~FMarkdownAssetEditorToolkit()
 {
+	FMarkdownEditorCommands::Unregister();
+
 	if (GEditor)
 	{
 		GEditor->GetTimerManager()->ClearTimer(PreviewUpdateTimerHandle);
@@ -51,7 +95,7 @@ void FMarkdownAssetEditorToolkit::RegisterTabSpawners(const TSharedRef<class FTa
 	FAssetEditorToolkit::RegisterTabSpawners(InTabManager);
 
 	InTabManager->RegisterTabSpawner(MainTabId, FOnSpawnTab::CreateSP(this, &FMarkdownAssetEditorToolkit::SpawnTab_Main))
-		.SetDisplayName(FText::FromString(TEXT("Markdown Editor")))
+		.SetDisplayName(LOCTEXT("MainTab", "Markdown Editor"))
 		.SetGroup(WorkspaceMenuCategory.ToSharedRef());
 }
 
@@ -64,6 +108,9 @@ void FMarkdownAssetEditorToolkit::UnregisterTabSpawners(const TSharedRef<class F
 void FMarkdownAssetEditorToolkit::Initialize(UMarkdownAsset* InMarkdownAsset, const EToolkitMode::Type Mode, const TSharedPtr<class IToolkitHost>& InitToolkitHost)
 {
 	MarkdownAsset = InMarkdownAsset;
+
+	FMarkdownEditorCommands::Register();
+	BindCommands();
 
 	// Create the layout
 	TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Standalone_MarkdownAssetEditor_Layout_v1")
@@ -88,6 +135,9 @@ void FMarkdownAssetEditorToolkit::Initialize(UMarkdownAsset* InMarkdownAsset, co
 		true, /*bCreateDefaultToolbar*/
 		InMarkdownAsset
 	);
+
+	RegisterToolbar();
+	RegenerateMenusAndToolbars();
 }
 
 FName FMarkdownAssetEditorToolkit::GetToolkitFName() const
@@ -97,7 +147,7 @@ FName FMarkdownAssetEditorToolkit::GetToolkitFName() const
 
 FText FMarkdownAssetEditorToolkit::GetBaseToolkitName() const
 {
-	return FText::FromString("Markdown Asset Editor");
+	return LOCTEXT("ToolkitName", "Markdown Asset Editor");
 }
 
 FString FMarkdownAssetEditorToolkit::GetWorldCentricTabPrefix() const
@@ -110,11 +160,17 @@ FLinearColor FMarkdownAssetEditorToolkit::GetWorldCentricTabColorScale() const
 	return FLinearColor::White;
 }
 
+// ---- Text Change & Preview ----
+
 void FMarkdownAssetEditorToolkit::OnTextChanged(const FText& NewText)
 {
 	if (MarkdownAsset)
 	{
-		MarkdownAsset->RawMarkdownText = NewText.ToString();
+		{
+			FScopedTransaction Transaction(LOCTEXT("EditMarkdownText", "Edit Markdown Text"));
+			MarkdownAsset->Modify();
+			MarkdownAsset->RawMarkdownText = NewText.ToString();
+		}
 		MarkdownAsset->MarkPackageDirty();
 
 		if (GEditor)
@@ -146,12 +202,218 @@ void FMarkdownAssetEditorToolkit::UpdatePreview()
 	}
 }
 
+// ---- Toolbar ----
+
+void FMarkdownAssetEditorToolkit::BindCommands()
+{
+	ToolkitCommands = MakeShareable(new FUICommandList);
+	const FMarkdownEditorCommands& Commands = FMarkdownEditorCommands::Get();
+
+	ToolkitCommands->MapAction(Commands.Bold, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnBold));
+	ToolkitCommands->MapAction(Commands.Italic, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnItalic));
+	ToolkitCommands->MapAction(Commands.Strikethrough, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnStrikethrough));
+	ToolkitCommands->MapAction(Commands.InsertLink, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnInsertLink));
+	ToolkitCommands->MapAction(Commands.InsertCodeBlock, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnInsertCodeBlock));
+	ToolkitCommands->MapAction(Commands.Heading1, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnHeading1));
+	ToolkitCommands->MapAction(Commands.Heading2, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnHeading2));
+	ToolkitCommands->MapAction(Commands.Heading3, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnHeading3));
+	ToolkitCommands->MapAction(Commands.BulletList, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnBulletList));
+	ToolkitCommands->MapAction(Commands.NumberedList, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnNumberedList));
+	ToolkitCommands->MapAction(Commands.InsertTable, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnInsertTable));
+	ToolkitCommands->MapAction(Commands.InsertImage, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnInsertImage));
+	ToolkitCommands->MapAction(Commands.HorizontalRule, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnHorizontalRule));
+	ToolkitCommands->MapAction(Commands.Blockquote, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnBlockquote));
+}
+
+void FMarkdownAssetEditorToolkit::RegisterToolbar()
+{
+	TSharedPtr<FExtender> ToolbarExtender = MakeShareable(new FExtender);
+
+	ToolbarExtender->AddToolBarExtension(
+		"Asset",
+		EExtensionHook::After,
+		ToolkitCommands,
+		FToolBarExtensionDelegate::CreateSP(this, &FMarkdownAssetEditorToolkit::ExtendToolbar)
+	);
+
+	AddToolbarExtender(ToolbarExtender);
+}
+
+void FMarkdownAssetEditorToolkit::ExtendToolbar(FToolBarBuilder& ToolBarBuilder)
+{
+	const FMarkdownEditorCommands& Commands = FMarkdownEditorCommands::Get();
+
+	ToolBarBuilder.AddSeparator();
+
+	// Headings
+	ToolBarBuilder.AddToolBarButton(Commands.Heading1);
+	ToolBarBuilder.AddToolBarButton(Commands.Heading2);
+	ToolBarBuilder.AddToolBarButton(Commands.Heading3);
+
+	ToolBarBuilder.AddSeparator();
+
+	// Text formatting
+	ToolBarBuilder.AddToolBarButton(Commands.Bold);
+	ToolBarBuilder.AddToolBarButton(Commands.Italic);
+	ToolBarBuilder.AddToolBarButton(Commands.Strikethrough);
+
+	ToolBarBuilder.AddSeparator();
+
+	// Insert elements
+	ToolBarBuilder.AddToolBarButton(Commands.InsertLink);
+	ToolBarBuilder.AddToolBarButton(Commands.InsertImage);
+	ToolBarBuilder.AddToolBarButton(Commands.InsertCodeBlock);
+	ToolBarBuilder.AddToolBarButton(Commands.Blockquote);
+
+	ToolBarBuilder.AddSeparator();
+
+	// Lists and structure
+	ToolBarBuilder.AddToolBarButton(Commands.BulletList);
+	ToolBarBuilder.AddToolBarButton(Commands.NumberedList);
+	ToolBarBuilder.AddToolBarButton(Commands.InsertTable);
+	ToolBarBuilder.AddToolBarButton(Commands.HorizontalRule);
+}
+
+// ---- Markdown Formatting Helpers ----
+
+void FMarkdownAssetEditorToolkit::WrapSelectionWith(const FString& Prefix, const FString& Suffix)
+{
+	if (!EditableTextBox.IsValid() || !MarkdownAsset)
+	{
+		return;
+	}
+
+	FText CurrentText = EditableTextBox->GetText();
+	FString TextStr = CurrentText.ToString();
+
+	// SMultiLineEditableTextBox doesn't expose selection, so insert at end
+	// This is a simplification - ideally we'd wrap selected text
+	FString SelectedText = EditableTextBox->GetSelectedText().ToString();
+
+	if (SelectedText.IsEmpty())
+	{
+		SelectedText = TEXT("text");
+	}
+
+	FString Replacement = Prefix + SelectedText + Suffix;
+
+	// If there's selected text, try to replace it; otherwise append
+	if (!EditableTextBox->GetSelectedText().IsEmpty())
+	{
+		EditableTextBox->InsertTextAtCursor(Replacement);
+	}
+	else
+	{
+		EditableTextBox->InsertTextAtCursor(Replacement);
+	}
+}
+
+void FMarkdownAssetEditorToolkit::InsertAtLineStart(const FString& Prefix)
+{
+	if (!EditableTextBox.IsValid())
+	{
+		return;
+	}
+
+	EditableTextBox->InsertTextAtCursor(Prefix);
+}
+
+void FMarkdownAssetEditorToolkit::InsertTextAtCursor(const FString& Text)
+{
+	if (!EditableTextBox.IsValid())
+	{
+		return;
+	}
+
+	EditableTextBox->InsertTextAtCursor(Text);
+}
+
+// ---- Command Handlers ----
+
+void FMarkdownAssetEditorToolkit::OnBold()
+{
+	WrapSelectionWith(TEXT("**"), TEXT("**"));
+}
+
+void FMarkdownAssetEditorToolkit::OnItalic()
+{
+	WrapSelectionWith(TEXT("*"), TEXT("*"));
+}
+
+void FMarkdownAssetEditorToolkit::OnStrikethrough()
+{
+	WrapSelectionWith(TEXT("~~"), TEXT("~~"));
+}
+
+void FMarkdownAssetEditorToolkit::OnInsertLink()
+{
+	FString SelectedText = EditableTextBox.IsValid() ? EditableTextBox->GetSelectedText().ToString() : TEXT("");
+	if (SelectedText.IsEmpty())
+	{
+		SelectedText = TEXT("link text");
+	}
+	FString LinkText = FString::Printf(TEXT("[%s](url)"), *SelectedText);
+	InsertTextAtCursor(LinkText);
+}
+
+void FMarkdownAssetEditorToolkit::OnInsertCodeBlock()
+{
+	InsertTextAtCursor(TEXT("\n```\ncode\n```\n"));
+}
+
+void FMarkdownAssetEditorToolkit::OnHeading1()
+{
+	InsertAtLineStart(TEXT("# "));
+}
+
+void FMarkdownAssetEditorToolkit::OnHeading2()
+{
+	InsertAtLineStart(TEXT("## "));
+}
+
+void FMarkdownAssetEditorToolkit::OnHeading3()
+{
+	InsertAtLineStart(TEXT("### "));
+}
+
+void FMarkdownAssetEditorToolkit::OnBulletList()
+{
+	InsertAtLineStart(TEXT("- "));
+}
+
+void FMarkdownAssetEditorToolkit::OnNumberedList()
+{
+	InsertAtLineStart(TEXT("1. "));
+}
+
+void FMarkdownAssetEditorToolkit::OnInsertTable()
+{
+	InsertTextAtCursor(TEXT("\n| Header 1 | Header 2 | Header 3 |\n| --- | --- | --- |\n| Cell 1 | Cell 2 | Cell 3 |\n"));
+}
+
+void FMarkdownAssetEditorToolkit::OnInsertImage()
+{
+	InsertTextAtCursor(TEXT("![alt text](image_url)"));
+}
+
+void FMarkdownAssetEditorToolkit::OnHorizontalRule()
+{
+	InsertTextAtCursor(TEXT("\n---\n"));
+}
+
+void FMarkdownAssetEditorToolkit::OnBlockquote()
+{
+	InsertAtLineStart(TEXT("> "));
+}
+
+// ---- Tab Spawning ----
+
 TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabArgs& Args)
 {
 	FText InitialText = MarkdownAsset ? FText::FromString(MarkdownAsset->RawMarkdownText) : FText::GetEmpty();
 
 	TSharedRef<SDockTab> SpawnedTab = SNew(SDockTab)
-		.Label(FText::FromString("Markdown Editor"))
+		.Label(LOCTEXT("EditorTabLabel", "Markdown Editor"))
 		.TabRole(ETabRole::DocumentTab)
 		[
 			SNew(SSplitter)
@@ -164,7 +426,7 @@ TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabA
 				SAssignNew(EditableTextBox, SMultiLineEditableTextBox)
 				.Text(InitialText)
 				.OnTextChanged(this, &FMarkdownAssetEditorToolkit::OnTextChanged)
-				.Font(FCoreStyle::GetDefaultFontStyle("Regular", 12))
+				.Font(FCoreStyle::GetDefaultFontStyle("Mono", 12))
 			]
 
 			// Right Panel: HTML Preview
@@ -185,3 +447,5 @@ TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabA
 
 	return SpawnedTab;
 }
+
+#undef LOCTEXT_NAMESPACE

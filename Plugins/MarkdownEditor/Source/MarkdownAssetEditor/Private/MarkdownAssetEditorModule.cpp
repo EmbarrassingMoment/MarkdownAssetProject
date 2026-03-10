@@ -2,8 +2,11 @@
 
 #include "MarkdownAssetEditorModule.h"
 #include "MarkdownAssetActions.h"
+#include "MarkdownAssetThumbnailRenderer.h"
+#include "MarkdownAsset.h"
 #include "AssetToolsModule.h"
 #include "IAssetTools.h"
+#include "ThumbnailRendering/ThumbnailManager.h"
 
 #define LOCTEXT_NAMESPACE "FMarkdownAssetEditorModule"
 
@@ -17,6 +20,9 @@ void FMarkdownAssetEditorModule::StartupModule()
 	// Register asset actions
 	MarkdownAssetActions = MakeShareable(new FMarkdownAssetActions(MarkdownAssetCategoryBit));
 	AssetTools.RegisterAssetTypeActions(MarkdownAssetActions.ToSharedRef());
+
+	// Register thumbnail renderer
+	UThumbnailManager::Get().RegisterCustomRenderer(UMarkdownAsset::StaticClass(), UMarkdownAssetThumbnailRenderer::StaticClass());
 }
 
 void FMarkdownAssetEditorModule::ShutdownModule()
