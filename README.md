@@ -11,7 +11,7 @@ An Unreal Engine 5.5 plugin that adds a custom Markdown asset type with a live-p
 - **Content Browser Integration** — Create new Markdown assets directly from the context menu, with custom thumbnail previews showing the "MD" label and the first few lines of content
 - **Import / Export** — Drag-and-drop `.md` / `.markdown` files into the Content Browser to import, reimport from source files, or export assets back to `.md`
 - **GitHub Flavored Markdown** — Supports GFM extensions such as tables, task lists, and strikethrough via the `MD_DIALECT_GITHUB` flag
-- **Blueprint Support** — Read/write `RawMarkdownText` and call `GetParsedHTML()` from Blueprints
+- **Blueprint Support** — Read/write `RawMarkdownText` and call `GetParsedHTML()`, `GetRawMarkdownText()`, and `GetPlainText()` from Blueprints
 - **Toolbar & Keyboard Shortcuts** — Built-in formatting toolbar with keyboard shortcuts for common Markdown operations
 
 ### Keyboard Shortcuts
@@ -54,6 +54,19 @@ An Unreal Engine 5.5 plugin that adds a custom Markdown asset type with a live-p
 - **Import**: Drag a `.md` or `.markdown` file into the Content Browser to create a Markdown asset.
 - **Reimport**: Right-click an imported asset and select **Reimport** to reload from the original source file.
 - **Export**: Right-click a Markdown asset and select **Asset Actions > Export** to save it as a `.md` file.
+
+### Blueprint Nodes
+
+`UMarkdownAsset` exposes the following Blueprint-callable functions:
+
+| Node | Return Type | Description |
+|------|-------------|-------------|
+| `GetParsedHTML` | `FString` | Converts the Markdown text to an HTML string using md4c |
+| `GetRawMarkdownText` | `FString` | Returns the raw Markdown text as-is |
+| `GetPlainText` | `FString` | Returns the text content with all Markdown symbols removed |
+
+- **GetPlainText** is useful for displaying Markdown content in UMG Widgets or 3D text, where Markdown / HTML rendering is not available.
+- **GetRawMarkdownText** returns the source Markdown, intended for future extensibility (e.g., custom rendering pipelines).
 
 ## Project Structure
 

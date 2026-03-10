@@ -11,7 +11,7 @@
 - **コンテンツブラウザの統合** — コンテキストメニューから直接新しいMarkdownアセットを作成できます。「MD」ラベルとコンテンツの最初の数行を表示するカスタムサムネイルプレビュー付きです。
 - **インポート / エクスポート** — `.md` / `.markdown` ファイルをコンテンツブラウザにドラッグ＆ドロップしてインポート、ソースファイルからのリインポート、および `.md` ファイルへのエクスポートに対応。
 - **GitHub Flavored Markdown** — `MD_DIALECT_GITHUB` フラグにより、テーブル、タスクリスト、取り消し線などの GFM 拡張構文をサポート。
-- **Blueprint サポート** — Blueprint から `RawMarkdownText` の読み書きと `GetParsedHTML()` による HTML 変換が可能。
+- **Blueprint サポート** — Blueprint から `RawMarkdownText` の読み書きと `GetParsedHTML()`、`GetRawMarkdownText()`、`GetPlainText()` の呼び出しが可能。
 - **ツールバーとキーボードショートカット** — 一般的なMarkdown操作のためのキーボードショートカットを備えた組み込みのフォーマットツールバー。
 
 ### キーボードショートカット
@@ -54,6 +54,19 @@
 - **インポート**: `.md` または `.markdown` ファイルをコンテンツブラウザにドラッグするとMarkdownアセットが作成されます。
 - **リインポート**: インポートしたアセットを右クリックし、**Reimport** を選択すると元のソースファイルから再読み込みできます。
 - **エクスポート**: Markdownアセットを右クリックし、**Asset Actions > Export** を選択すると `.md` ファイルとして保存できます。
+
+### Blueprint ノード
+
+`UMarkdownAsset` は以下の Blueprint から呼び出し可能な関数を公開しています:
+
+| ノード | 戻り値の型 | 説明 |
+|------|-------------|-------------|
+| `GetParsedHTML` | `FString` | md4c を使用して Markdown テキストを HTML 文字列に変換します |
+| `GetRawMarkdownText` | `FString` | 生の Markdown テキストをそのまま返します |
+| `GetPlainText` | `FString` | すべての Markdown 記号を除去したテキストを返します |
+
+- **GetPlainText** は、Markdown / HTML の描画ができない UMG Widget や 3D テキストで Markdown コンテンツを表示する場合に便利です。
+- **GetRawMarkdownText** は、ソースの Markdown をそのまま返します。将来の拡張（カスタムレンダリングパイプラインなど）を想定しています。
 
 ## プロジェクト構造
 
