@@ -28,4 +28,12 @@ public:
 	/** Parses the raw Markdown text into an HTML string. */
 	UFUNCTION(BlueprintCallable, Category = "Markdown")
 	FString GetParsedHTML() const;
+
+	/** Returns the raw Markdown text as-is. */
+	UFUNCTION(BlueprintCallable, Category = "Markdown")
+	FString GetRawMarkdownText() const;
+
+	/** Returns the plain text with all Markdown symbols removed. */
+	UFUNCTION(BlueprintCallable, Category = "Markdown")
+	FString GetPlainText() const;
 };

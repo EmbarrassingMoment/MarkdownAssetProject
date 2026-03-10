@@ -3,6 +3,7 @@
 #include "MarkdownAsset.h"
 
 extern "C" {
+#include "md4c.h"
 #include "md4c-html.h"
 }
 
@@ -36,4 +37,109 @@ FString UMarkdownAsset::GetParsedHTML() const
 	md_html(MdInput, MdSize, MarkdownHtmlProcessOutputCallback, &OutputHtml, MD_DIALECT_GITHUB, 0);
 
 	return OutputHtml;
+}
+
+FString UMarkdownAsset::GetRawMarkdownText() const
+{
+	return RawMarkdownText;
+}
+
+/**
+ * Callback data structure for plain text extraction via md_parse().
+ */
+struct FPlainTextExtractData
+{
+	FString OutputText;
+	bool bNeedsSeparator = false;
+};
+
+static int PlainTextEnterBlock(MD_BLOCKTYPE Type, void* Detail, void* UserData)
+{
+	return 0;
+}
+
+static int PlainTextLeaveBlock(MD_BLOCKTYPE Type, void* Detail, void* UserData)
+{
+	FPlainTextExtractData* Data = static_cast<FPlainTextExtractData*>(UserData);
+
+	// Insert newline after block-level elements to preserve paragraph separation
+	if (Type == MD_BLOCK_P || Type == MD_BLOCK_H || Type == MD_BLOCK_CODE
+		|| Type == MD_BLOCK_LI || Type == MD_BLOCK_HR || Type == MD_BLOCK_TR)
+	{
+		Data->bNeedsSeparator = true;
+	}
+
+	return 0;
+}
+
+static int PlainTextEnterSpan(MD_SPANTYPE Type, void* Detail, void* UserData)
+{
+	return 0;
+}
+
+static int PlainTextLeaveSpan(MD_SPANTYPE Type, void* Detail, void* UserData)
+{
+	return 0;
+}
+
+static int PlainTextCallback(MD_TEXTTYPE Type, const MD_CHAR* Text, MD_SIZE Size, void* UserData)
+{
+	FPlainTextExtractData* Data = static_cast<FPlainTextExtractData*>(UserData);
+
+	switch (Type)
+	{
+	case MD_TEXT_BR:
+	case MD_TEXT_SOFTBR:
+		Data->OutputText.AppendChar(TEXT('\n'));
+		Data->bNeedsSeparator = false;
+		break;
+
+	case MD_TEXT_NORMAL:
+	case MD_TEXT_CODE:
+	case MD_TEXT_ENTITY:
+	case MD_TEXT_LATEXMATH:
+		if (Data->bNeedsSeparator && Data->OutputText.Len() > 0)
+		{
+			Data->OutputText.AppendChar(TEXT('\n'));
+			Data->bNeedsSeparator = false;
+		}
+		{
+			FUTF8ToTCHAR Utf8Converter(Text, Size);
+			Data->OutputText.AppendChars(Utf8Converter.Get(), Utf8Converter.Length());
+		}
+		break;
+
+	default:
+		break;
+	}
+
+	return 0;
+}
+
+FString UMarkdownAsset::GetPlainText() const
+{
+	if (RawMarkdownText.IsEmpty())
+	{
+		return FString();
+	}
+
+	// Convert FString to UTF-8
+	FTCHARToUTF8 Utf8String(*RawMarkdownText);
+	const MD_CHAR* MdInput = Utf8String.Get();
+	MD_SIZE MdSize = Utf8String.Length();
+
+	// Set up the parser to extract text only
+	MD_PARSER Parser = {};
+	Parser.abi_version = 0;
+	Parser.flags = MD_DIALECT_GITHUB;
+	Parser.enter_block = PlainTextEnterBlock;
+	Parser.leave_block = PlainTextLeaveBlock;
+	Parser.enter_span = PlainTextEnterSpan;
+	Parser.leave_span = PlainTextLeaveSpan;
+	Parser.text = PlainTextCallback;
+
+	FPlainTextExtractData ExtractData;
+	md_parse(MdInput, MdSize, &Parser, &ExtractData);
+
+	return ExtractData.OutputText;
 }
