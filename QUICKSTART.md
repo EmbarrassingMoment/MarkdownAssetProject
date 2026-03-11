@@ -19,11 +19,20 @@ Get up and running with the Markdown Editor plugin in minutes.
 2. Double-click the new asset to open the editor.
 3. Write Markdown in the left pane — the right pane shows a live HTML preview.
 
+<!-- TODO: Insert GIF - Screen recording of creating a Markdown asset from the Content Browser right-click menu -->
+![Create Asset](docs/images/create-asset.gif)
+
+<!-- TODO: Insert GIF - Screen recording of live Markdown editing with real-time HTML preview -->
+![Live Preview](docs/images/live-preview.gif)
+
 ## 3. Import & Export
 
 - **Import** — Drag a `.md` or `.markdown` file into the Content Browser.
 - **Reimport** — Right-click an imported asset > **Reimport**.
 - **Export** — Right-click an asset > **Asset Actions > Export** to save as `.md`.
+
+<!-- TODO: Insert GIF - Screen recording of drag-and-drop import and export workflow -->
+![Import and Export](docs/images/import-export.gif)
 
 ## 4. Use in Blueprints
 
@@ -34,6 +43,9 @@ Get up and running with the Markdown Editor plugin in minutes.
 | `GetParsedHTML` | Converts Markdown to HTML |
 | `GetRawMarkdownText` | Returns the raw Markdown source |
 | `GetPlainText` | Returns text with Markdown symbols stripped |
+
+<!-- TODO: Insert image - Screenshot of Blueprint editor showing the three Markdown asset nodes -->
+![Blueprint Nodes](docs/images/blueprint-nodes.png)
 
 ## Key Shortcuts
 

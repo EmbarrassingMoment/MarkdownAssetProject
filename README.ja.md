@@ -2,6 +2,9 @@
 
 カスタムMarkdownアセットタイプとライブプレビューエディタを追加するUnreal Engine 5.5用プラグイン。
 
+<!-- TODO: 画像を挿入 - デュアルペインMarkdownエディタのメインスクリーンショット（左: Markdownソース、右: HTMLプレビュー） -->
+![エディタ概観](docs/images/editor-overview.png)
+
 ## 機能
 
 - **カスタムMarkdownアセット** — `UMarkdownAsset`は生のMarkdownテキストをファーストクラスのUObjectとして保存します。
@@ -13,6 +16,12 @@
 - **GitHub Flavored Markdown** — `MD_DIALECT_GITHUB` フラグにより、テーブル、タスクリスト、取り消し線などの GFM 拡張構文をサポート。
 - **Blueprint サポート** — Blueprint から `RawMarkdownText` の読み書きと `GetParsedHTML()`、`GetRawMarkdownText()`、`GetPlainText()` の呼び出しが可能。
 - **ツールバーとキーボードショートカット** — 一般的なMarkdown操作のためのキーボードショートカットを備えた組み込みのフォーマットツールバー。
+
+<!-- TODO: 画像を挿入 - ダークテーマが適用されたHTMLプレビューペインの表示例 -->
+![ダークテーマプレビュー](docs/images/dark-theme-preview.png)
+
+<!-- TODO: 画像を挿入 - コンテンツブラウザ上の「MD」ラベルとコンテンツプレビュー付きサムネイル -->
+![コンテンツブラウザのサムネイル](docs/images/content-browser-thumbnail.png)
 
 ### キーボードショートカット
 
@@ -30,6 +39,9 @@
 | 引用ブロック | Ctrl+Shift+Q |
 | テーブル挿入 | — |
 | 水平線 | — |
+
+<!-- TODO: 画像を挿入 - フォーマットツールバーのボタン（Bold、Italic、Headingなど）のクローズアップ -->
+![ツールバーショートカット](docs/images/toolbar-shortcuts.png)
 
 ## 要件
 
@@ -49,11 +61,20 @@
 2. アセットをダブルクリックしてMarkdownエディタを開きます。
 3. 左側のペインにMarkdownを記述すると、右側のペインでHTMLプレビューがリアルタイムに更新されます。
 
+<!-- TODO: GIFを挿入 - コンテンツブラウザの右クリックメニューから新規Markdownアセットを作成する操作の録画 -->
+![アセットの作成](docs/images/create-asset.gif)
+
+<!-- TODO: GIFを挿入 - Markdownを入力するとHTMLプレビューがリアルタイムで更新される様子の録画 -->
+![ライブプレビュー](docs/images/live-preview.gif)
+
 ### インポート / エクスポート
 
 - **インポート**: `.md` または `.markdown` ファイルをコンテンツブラウザにドラッグするとMarkdownアセットが作成されます。
 - **リインポート**: インポートしたアセットを右クリックし、**Reimport** を選択すると元のソースファイルから再読み込みできます。
 - **エクスポート**: Markdownアセットを右クリックし、**Asset Actions > Export** を選択すると `.md` ファイルとして保存できます。
+
+<!-- TODO: GIFを挿入 - ドラッグ＆ドロップによるインポートとエクスポートメニューの操作録画 -->
+![インポートとエクスポート](docs/images/import-export.gif)
 
 ### Blueprint ノード
 
@@ -67,6 +88,9 @@
 
 - **GetPlainText** は、Markdown / HTML の描画ができない UMG Widget や 3D テキストで Markdown コンテンツを表示する場合に便利です。
 - **GetRawMarkdownText** は、ソースの Markdown をそのまま返します。将来の拡張（カスタムレンダリングパイプラインなど）を想定しています。
+
+<!-- TODO: 画像を挿入 - ブループリントエディタでGetParsedHTML、GetRawMarkdownText、GetPlainTextノードを使用している例 -->
+![Blueprintノード](docs/images/blueprint-nodes.png)
 
 ## プロジェクト構造
 

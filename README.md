@@ -2,6 +2,9 @@
 
 An Unreal Engine 5.5 plugin that adds a custom Markdown asset type with a live-preview editor.
 
+<!-- TODO: Insert image - Main screenshot of the dual-pane Markdown editor (left: Markdown source, right: HTML preview) -->
+![Editor Overview](docs/images/editor-overview.png)
+
 ## Features
 
 - **Custom Markdown Asset** — `UMarkdownAsset` stores raw Markdown text as a first-class UObject
@@ -13,6 +16,12 @@ An Unreal Engine 5.5 plugin that adds a custom Markdown asset type with a live-p
 - **GitHub Flavored Markdown** — Supports GFM extensions such as tables, task lists, and strikethrough via the `MD_DIALECT_GITHUB` flag
 - **Blueprint Support** — Read/write `RawMarkdownText` and call `GetParsedHTML()`, `GetRawMarkdownText()`, and `GetPlainText()` from Blueprints
 - **Toolbar & Keyboard Shortcuts** — Built-in formatting toolbar with keyboard shortcuts for common Markdown operations
+
+<!-- TODO: Insert image - Dark theme HTML preview pane showing styled Markdown output -->
+![Dark Theme Preview](docs/images/dark-theme-preview.png)
+
+<!-- TODO: Insert image - Content Browser showing Markdown asset thumbnails with "MD" label and content preview -->
+![Content Browser Thumbnails](docs/images/content-browser-thumbnail.png)
 
 ### Keyboard Shortcuts
 
@@ -30,6 +39,9 @@ An Unreal Engine 5.5 plugin that adds a custom Markdown asset type with a live-p
 | Blockquote | Ctrl+Shift+Q |
 | Insert Table | — |
 | Horizontal Rule | — |
+
+<!-- TODO: Insert image - Close-up of the formatting toolbar buttons (Bold, Italic, Heading, etc.) -->
+![Toolbar Shortcuts](docs/images/toolbar-shortcuts.png)
 
 ## Requirements
 
@@ -49,11 +61,20 @@ An Unreal Engine 5.5 plugin that adds a custom Markdown asset type with a live-p
 2. Double-click the asset to open the Markdown editor.
 3. Write Markdown in the left pane — the right pane updates the HTML preview in real time.
 
+<!-- TODO: Insert GIF - Screen recording of creating a new Markdown asset via Content Browser right-click menu -->
+![Create Asset](docs/images/create-asset.gif)
+
+<!-- TODO: Insert GIF - Screen recording of typing Markdown and seeing the HTML preview update in real time -->
+![Live Preview](docs/images/live-preview.gif)
+
 ### Import / Export
 
 - **Import**: Drag a `.md` or `.markdown` file into the Content Browser to create a Markdown asset.
 - **Reimport**: Right-click an imported asset and select **Reimport** to reload from the original source file.
 - **Export**: Right-click a Markdown asset and select **Asset Actions > Export** to save it as a `.md` file.
+
+<!-- TODO: Insert GIF - Screen recording of drag-and-drop import and export menu operation -->
+![Import and Export](docs/images/import-export.gif)
 
 ### Blueprint Nodes
 
@@ -67,6 +88,9 @@ An Unreal Engine 5.5 plugin that adds a custom Markdown asset type with a live-p
 
 - **GetPlainText** is useful for displaying Markdown content in UMG Widgets or 3D text, where Markdown / HTML rendering is not available.
 - **GetRawMarkdownText** returns the source Markdown, intended for future extensibility (e.g., custom rendering pipelines).
+
+<!-- TODO: Insert image - Screenshot of Blueprint editor showing GetParsedHTML, GetRawMarkdownText, and GetPlainText nodes -->
+![Blueprint Nodes](docs/images/blueprint-nodes.png)
 
 ## Project Structure
 
