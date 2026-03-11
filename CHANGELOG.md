@@ -14,7 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **md4c Integration** — Embedded fast C-based Markdown-to-HTML parser
 - **GitHub Flavored Markdown (GFM)** — Support for tables, task lists, and strikethrough
 - **Content Browser Integration** — Create Markdown assets via right-click context menu with custom "MD" thumbnails
-- **Import/Export** — Drag-and-drop `.md` file import, reimport support, and export to `.md`
+- **Import/Export** — Drag-and-drop `.md` / `.markdown` file import, reimport support, and export to `.md`
 - **Blueprint Support** — Blueprint-callable functions: `GetParsedHTML()`, `GetRawMarkdownText()`, `GetPlainText()`
 - **Toolbar & Keyboard Shortcuts** — 12 formatting commands (Bold, Italic, Strikethrough, Code Block, Headings, Lists, Blockquote, Table, Horizontal Rule)
 - **Dark Theme** — Styled HTML preview with dark background

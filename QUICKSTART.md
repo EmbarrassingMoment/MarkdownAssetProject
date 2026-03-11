@@ -6,6 +6,7 @@ Get up and running with the Markdown Editor plugin in minutes.
 
 - Unreal Engine 5.5
 - A C++ project
+- `WebBrowserWidget` plugin (enabled automatically as a dependency)
 
 ## 1. Install the Plugin
 
@@ -15,9 +16,11 @@ Get up and running with the Markdown Editor plugin in minutes.
 
 ## 2. Create Your First Markdown Asset
 
-1. In the **Content Browser**, right-click and select **Miscellaneous > Markdown Text**.
+1. In the **Content Browser**, right-click and select **Markdown > Markdown Text**.
 2. Double-click the new asset to open the editor.
 3. Write Markdown in the left pane — the right pane shows a live HTML preview.
+
+> **Tip:** You can also open the included `MD_Sample` asset in the Content Browser to see an example.
 
 ![Create Asset](docs/images/create-asset.gif)
 
