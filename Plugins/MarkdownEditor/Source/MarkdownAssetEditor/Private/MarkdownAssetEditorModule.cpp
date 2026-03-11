@@ -40,6 +40,12 @@ void FMarkdownAssetEditorModule::ShutdownModule()
 	}
 
 	MarkdownAssetActions.Reset();
+
+	// Unregister thumbnail renderer
+	if (UObjectInitialized())
+	{
+		UThumbnailManager::Get().UnregisterCustomRenderer(UMarkdownAsset::StaticClass());
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

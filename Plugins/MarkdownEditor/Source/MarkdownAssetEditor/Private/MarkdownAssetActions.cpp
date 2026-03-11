@@ -4,6 +4,8 @@
 #include "MarkdownAsset.h"
 #include "MarkdownAssetEditorToolkit.h"
 
+#define LOCTEXT_NAMESPACE "MarkdownAssetActions"
+
 /** Stores the asset category for later retrieval by the Content Browser. */
 FMarkdownAssetActions::FMarkdownAssetActions(EAssetTypeCategories::Type InAssetCategory)
 	: AssetCategory(InAssetCategory)
@@ -13,7 +15,7 @@ FMarkdownAssetActions::FMarkdownAssetActions(EAssetTypeCategories::Type InAssetC
 /** Returns "Markdown Text" as the display name for this asset type. */
 FText FMarkdownAssetActions::GetName() const
 {
-	return FText::FromString("Markdown Text");
+	return LOCTEXT("MarkdownAssetName", "Markdown Text");
 }
 
 /** Returns a gray color to represent Markdown assets in the editor UI. */
@@ -49,3 +51,5 @@ void FMarkdownAssetActions::OpenAssetEditor(const TArray<UObject*>& InObjects, T
 		}
 	}
 }
+
+#undef LOCTEXT_NAMESPACE
