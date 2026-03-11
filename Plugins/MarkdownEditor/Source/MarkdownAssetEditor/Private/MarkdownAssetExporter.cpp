@@ -5,6 +5,7 @@
 #include "Misc/FeedbackContext.h"
 #include "UObject/UObjectGlobals.h"
 
+/** Configures the exporter to support .md file format for UMarkdownAsset objects. */
 UMarkdownAssetExporter::UMarkdownAssetExporter()
 {
 	SupportedClass = UMarkdownAsset::StaticClass();
@@ -14,6 +15,7 @@ UMarkdownAssetExporter::UMarkdownAssetExporter()
 	PreferredFormatIndex = 0;
 }
 
+/** Writes the raw Markdown text of the asset to the output device for file export. */
 bool UMarkdownAssetExporter::ExportText(const FExportObjectInnerContext* Context, UObject* Object, const TCHAR* Type, FOutputDevice& Ar, FFeedbackContext* Warn, uint32 PortFlags)
 {
 	UMarkdownAsset* MarkdownAsset = Cast<UMarkdownAsset>(Object);

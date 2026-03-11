@@ -10,6 +10,7 @@
 
 #define LOCTEXT_NAMESPACE "FMarkdownAssetEditorModule"
 
+/** Registers the Markdown asset category, type actions, and thumbnail renderer. */
 void FMarkdownAssetEditorModule::StartupModule()
 {
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
@@ -25,6 +26,7 @@ void FMarkdownAssetEditorModule::StartupModule()
 	UThumbnailManager::Get().RegisterCustomRenderer(UMarkdownAsset::StaticClass(), UMarkdownAssetThumbnailRenderer::StaticClass());
 }
 
+/** Unregisters asset type actions when the module is unloaded. */
 void FMarkdownAssetEditorModule::ShutdownModule()
 {
 	if (FModuleManager::Get().IsModuleLoaded("AssetTools"))

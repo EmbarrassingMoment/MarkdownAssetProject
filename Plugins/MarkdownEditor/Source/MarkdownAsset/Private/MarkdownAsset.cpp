@@ -19,6 +19,7 @@ static void MarkdownHtmlProcessOutputCallback(const MD_CHAR* OutputData, MD_SIZE
 	OutputString->AppendChars(Utf8Converter.Get(), Utf8Converter.Length());
 }
 
+/** Converts the raw Markdown text to HTML using the md4c library with GitHub dialect. */
 FString UMarkdownAsset::GetParsedHTML() const
 {
 	FString OutputHtml;
@@ -39,6 +40,7 @@ FString UMarkdownAsset::GetParsedHTML() const
 	return OutputHtml;
 }
 
+/** Returns the raw Markdown source text without any processing. */
 FString UMarkdownAsset::GetRawMarkdownText() const
 {
 	return RawMarkdownText;
@@ -53,11 +55,13 @@ struct FPlainTextExtractData
 	bool bNeedsSeparator = false;
 };
 
+/** No-op callback invoked when the parser enters a block element. */
 static int PlainTextEnterBlock(MD_BLOCKTYPE Type, void* Detail, void* UserData)
 {
 	return 0;
 }
 
+/** Marks that a newline separator is needed after certain block-level elements. */
 static int PlainTextLeaveBlock(MD_BLOCKTYPE Type, void* Detail, void* UserData)
 {
 	FPlainTextExtractData* Data = static_cast<FPlainTextExtractData*>(UserData);
@@ -72,16 +76,19 @@ static int PlainTextLeaveBlock(MD_BLOCKTYPE Type, void* Detail, void* UserData)
 	return 0;
 }
 
+/** No-op callback invoked when the parser enters an inline span. */
 static int PlainTextEnterSpan(MD_SPANTYPE Type, void* Detail, void* UserData)
 {
 	return 0;
 }
 
+/** No-op callback invoked when the parser leaves an inline span. */
 static int PlainTextLeaveSpan(MD_SPANTYPE Type, void* Detail, void* UserData)
 {
 	return 0;
 }
 
+/** Appends text content to the output, handling line breaks and paragraph separation. */
 static int PlainTextCallback(MD_TEXTTYPE Type, const MD_CHAR* Text, MD_SIZE Size, void* UserData)
 {
 	FPlainTextExtractData* Data = static_cast<FPlainTextExtractData*>(UserData);
@@ -116,6 +123,7 @@ static int PlainTextCallback(MD_TEXTTYPE Type, const MD_CHAR* Text, MD_SIZE Size
 	return 0;
 }
 
+/** Strips all Markdown syntax and returns plain text by parsing with md4c callbacks. */
 FString UMarkdownAsset::GetPlainText() const
 {
 	if (RawMarkdownText.IsEmpty())

@@ -22,6 +22,9 @@
 
 // ---- Styled HTML Generation ----
 
+/**
+ * Wraps the parsed HTML content in a full HTML document with dark-themed CSS styling.
+ */
 static FString GenerateStyledHtml(const FString& ParsedHtml)
 {
 	return FString::Printf(TEXT(

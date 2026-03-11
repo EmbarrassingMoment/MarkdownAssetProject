@@ -7,12 +7,14 @@
 #include "Engine/Font.h"
 #include "Engine/Engine.h"
 
+/** Returns fixed 256x256 thumbnail dimensions. */
 void UMarkdownAssetThumbnailRenderer::GetThumbnailSize(UObject* Object, float Zoom, uint32& OutWidth, uint32& OutHeight) const
 {
 	OutWidth = 256;
 	OutHeight = 256;
 }
 
+/** Draws a dark-themed thumbnail with an "MD" label and a preview of the first few lines of content. */
 void UMarkdownAssetThumbnailRenderer::Draw(UObject* Object, int32 X, int32 Y, uint32 Width, uint32 Height, FRenderTarget* RenderTarget, FCanvas* Canvas, bool bAdditionalViewFamily)
 {
 	UMarkdownAsset* MarkdownAsset = Cast<UMarkdownAsset>(Object);
@@ -56,6 +58,7 @@ void UMarkdownAssetThumbnailRenderer::Draw(UObject* Object, int32 X, int32 Y, ui
 	}
 }
 
+/** Returns true if the object is a valid UMarkdownAsset instance. */
 bool UMarkdownAssetThumbnailRenderer::CanVisualizeAsset(UObject* Object)
 {
 	return Object && Object->IsA<UMarkdownAsset>();
