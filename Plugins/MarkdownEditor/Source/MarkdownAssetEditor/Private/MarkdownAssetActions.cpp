@@ -4,31 +4,37 @@
 #include "MarkdownAsset.h"
 #include "MarkdownAssetEditorToolkit.h"
 
+/** Stores the asset category for later retrieval by the Content Browser. */
 FMarkdownAssetActions::FMarkdownAssetActions(EAssetTypeCategories::Type InAssetCategory)
 	: AssetCategory(InAssetCategory)
 {
 }
 
+/** Returns "Markdown Text" as the display name for this asset type. */
 FText FMarkdownAssetActions::GetName() const
 {
 	return FText::FromString("Markdown Text");
 }
 
+/** Returns a gray color to represent Markdown assets in the editor UI. */
 FColor FMarkdownAssetActions::GetTypeColor() const
 {
 	return FColor(128, 128, 128); // Gray color
 }
 
+/** Returns UMarkdownAsset as the supported class. */
 UClass* FMarkdownAssetActions::GetSupportedClass() const
 {
 	return UMarkdownAsset::StaticClass();
 }
 
+/** Returns the registered Markdown asset category. */
 uint32 FMarkdownAssetActions::GetCategories()
 {
 	return AssetCategory;
 }
 
+/** Creates and initializes a FMarkdownAssetEditorToolkit for each selected Markdown asset. */
 void FMarkdownAssetActions::OpenAssetEditor(const TArray<UObject*>& InObjects, TSharedPtr<class IToolkitHost> EditWithinLevelEditor)
 {
 	const EToolkitMode::Type Mode = EditWithinLevelEditor.IsValid() ? EToolkitMode::WorldCentric : EToolkitMode::Standalone;

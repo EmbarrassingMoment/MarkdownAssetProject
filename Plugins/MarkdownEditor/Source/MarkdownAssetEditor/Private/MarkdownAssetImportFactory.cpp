@@ -5,6 +5,7 @@
 #include "Misc/FileHelper.h"
 #include "Misc/Paths.h"
 
+/** Configures the factory to handle .md and .markdown file imports as text. */
 UMarkdownAssetImportFactory::UMarkdownAssetImportFactory()
 {
 	bCreateNew = false;
@@ -16,6 +17,7 @@ UMarkdownAssetImportFactory::UMarkdownAssetImportFactory()
 	Formats.Add(TEXT("markdown;Markdown File"));
 }
 
+/** Creates a UMarkdownAsset from the text buffer and records the source file path for reimport. */
 UObject* UMarkdownAssetImportFactory::FactoryCreateText(
 	UClass* InClass, UObject* InParent, FName InName,
 	EObjectFlags Flags, UObject* Context,
@@ -35,6 +37,7 @@ UObject* UMarkdownAssetImportFactory::FactoryCreateText(
 	return NewAsset;
 }
 
+/** Returns true if the object is a UMarkdownAsset with a valid source file path. */
 bool UMarkdownAssetImportFactory::CanReimport(UObject* Obj, TArray<FString>& OutFilenames)
 {
 	UMarkdownAsset* MarkdownAsset = Cast<UMarkdownAsset>(Obj);
@@ -51,6 +54,7 @@ bool UMarkdownAssetImportFactory::CanReimport(UObject* Obj, TArray<FString>& Out
 	return false;
 }
 
+/** Updates the source file path stored on the Markdown asset for future reimports. */
 void UMarkdownAssetImportFactory::SetReimportPaths(UObject* Obj, const TArray<FString>& NewReimportPaths)
 {
 	UMarkdownAsset* MarkdownAsset = Cast<UMarkdownAsset>(Obj);
@@ -62,6 +66,7 @@ void UMarkdownAssetImportFactory::SetReimportPaths(UObject* Obj, const TArray<FS
 	}
 }
 
+/** Reloads the Markdown content from the source file on disk and updates the asset. */
 EReimportResult::Type UMarkdownAssetImportFactory::Reimport(UObject* Obj)
 {
 	UMarkdownAsset* MarkdownAsset = Cast<UMarkdownAsset>(Obj);
@@ -89,6 +94,7 @@ EReimportResult::Type UMarkdownAssetImportFactory::Reimport(UObject* Obj)
 	return EReimportResult::Failed;
 }
 
+/** Returns the default import priority for this factory. */
 int32 UMarkdownAssetImportFactory::GetPriority() const
 {
 	return ImportPriority;
