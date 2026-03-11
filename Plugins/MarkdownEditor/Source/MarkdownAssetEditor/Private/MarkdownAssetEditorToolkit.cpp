@@ -32,7 +32,7 @@ static FString GenerateStyledHtml(const FString& ParsedHtml)
 		"<html><head>\n"
 		"<meta charset=\"utf-8\">\n"
 		"<style>\n"
-		"body { font-family: 'Segoe UI', sans-serif; background-color: #1e1e1e; color: #cccccc; padding: 20px; }\n"
+		"body { font-family: 'Segoe UI', 'Meiryo', 'Yu Gothic', sans-serif; background-color: #1e1e1e; color: #cccccc; padding: 20px; }\n"
 		"h1, h2, h3, h4, h5, h6 { color: #ffffff; border-bottom: 1px solid #444; padding-bottom: 5px; }\n"
 		"code { background-color: #2d2d2d; padding: 2px 4px; border-radius: 4px; }\n"
 		"pre { background-color: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }\n"
