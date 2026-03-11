@@ -7,6 +7,8 @@ extern "C" {
 #include "md4c-html.h"
 }
 
+DEFINE_LOG_CATEGORY_STATIC(LogMarkdownAsset, Log, All);
+
 /**
  * Helper function for md4c-html callback to append output to a string.
  */
@@ -34,8 +36,14 @@ FString UMarkdownAsset::GetParsedHTML() const
 	const MD_CHAR* MdInput = Utf8String.Get();
 	MD_SIZE MdSize = Utf8String.Length();
 
-	// Parse markdown to HTML
-	md_html(MdInput, MdSize, MarkdownHtmlProcessOutputCallback, &OutputHtml, MD_DIALECT_GITHUB, 0);
+	// Parse markdown to HTML (disable raw HTML blocks/spans to prevent XSS)
+	const unsigned MdFlags = MD_DIALECT_GITHUB | MD_FLAG_NOHTMLBLOCKS | MD_FLAG_NOHTMLSPANS;
+	int Result = md_html(MdInput, MdSize, MarkdownHtmlProcessOutputCallback, &OutputHtml, MdFlags, 0);
+	if (Result != 0)
+	{
+		UE_LOG(LogMarkdownAsset, Error, TEXT("md_html() failed to parse Markdown (error code: %d)"), Result);
+		return FString();
+	}
 
 	return OutputHtml;
 }
@@ -136,10 +144,10 @@ FString UMarkdownAsset::GetPlainText() const
 	const MD_CHAR* MdInput = Utf8String.Get();
 	MD_SIZE MdSize = Utf8String.Length();
 
-	// Set up the parser to extract text only
+	// Set up the parser to extract text only (disable raw HTML blocks/spans)
 	MD_PARSER Parser = {};
 	Parser.abi_version = 0;
-	Parser.flags = MD_DIALECT_GITHUB;
+	Parser.flags = MD_DIALECT_GITHUB | MD_FLAG_NOHTMLBLOCKS | MD_FLAG_NOHTMLSPANS;
 	Parser.enter_block = PlainTextEnterBlock;
 	Parser.leave_block = PlainTextLeaveBlock;
 	Parser.enter_span = PlainTextEnterSpan;
@@ -147,7 +155,12 @@ FString UMarkdownAsset::GetPlainText() const
 	Parser.text = PlainTextCallback;
 
 	FPlainTextExtractData ExtractData;
-	md_parse(MdInput, MdSize, &Parser, &ExtractData);
+	int Result = md_parse(MdInput, MdSize, &Parser, &ExtractData);
+	if (Result != 0)
+	{
+		UE_LOG(LogMarkdownAsset, Error, TEXT("md_parse() failed to parse Markdown (error code: %d)"), Result);
+		return FString();
+	}
 
 	return ExtractData.OutputText;
 }

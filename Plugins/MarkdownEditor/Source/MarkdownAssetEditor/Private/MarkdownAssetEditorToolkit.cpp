@@ -316,28 +316,18 @@ void FMarkdownAssetEditorToolkit::WrapSelectionWith(const FString& Prefix, const
 		return;
 	}
 
-	FText CurrentText = EditableTextBox->GetText();
-	FString TextStr = CurrentText.ToString();
-
-	// SMultiLineEditableTextBox doesn't expose selection, so insert at end
-	// This is a simplification - ideally we'd wrap selected text
 	FString SelectedText = EditableTextBox->GetSelectedText().ToString();
 
 	if (SelectedText.IsEmpty())
 	{
-		SelectedText = TEXT("text");
-	}
-
-	FString Replacement = Prefix + SelectedText + Suffix;
-
-	// If there's selected text, try to replace it; otherwise append
-	if (!EditableTextBox->GetSelectedText().IsEmpty())
-	{
-		EditableTextBox->InsertTextAtCursor(Replacement);
+		// No selection: insert placeholder wrapped with formatting markers
+		EditableTextBox->InsertTextAtCursor(Prefix + TEXT("text") + Suffix);
 	}
 	else
 	{
-		EditableTextBox->InsertTextAtCursor(Replacement);
+		// Replace the selected text with the wrapped version
+		// InsertTextAtCursor replaces the current selection when text is selected
+		EditableTextBox->InsertTextAtCursor(Prefix + SelectedText + Suffix);
 	}
 }
 
@@ -348,7 +338,24 @@ void FMarkdownAssetEditorToolkit::InsertAtLineStart(const FString& Prefix)
 		return;
 	}
 
-	EditableTextBox->InsertTextAtCursor(Prefix);
+	FText CurrentText = EditableTextBox->GetText();
+	FString TextStr = CurrentText.ToString();
+
+	// Get the cursor location to determine the current line
+	FTextLocation CursorLocation = EditableTextBox->GetCursorLocation();
+	int32 LineIndex = CursorLocation.GetLineIndex();
+
+	// Split text into lines, insert prefix at the target line, and reassemble
+	TArray<FString> Lines;
+	TextStr.ParseIntoArray(Lines, TEXT("\n"), false);
+
+	if (LineIndex >= 0 && LineIndex < Lines.Num())
+	{
+		Lines[LineIndex] = Prefix + Lines[LineIndex];
+	}
+
+	FString NewText = FString::Join(Lines, TEXT("\n"));
+	EditableTextBox->SetText(FText::FromString(NewText));
 }
 
 void FMarkdownAssetEditorToolkit::InsertTextAtCursor(const FString& Text)

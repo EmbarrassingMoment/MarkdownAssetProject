@@ -143,7 +143,7 @@ private:
 	FTimerHandle PreviewUpdateTimerHandle;
 
 	/** The Markdown asset currently being edited. */
-	UMarkdownAsset* MarkdownAsset;
+	TObjectPtr<UMarkdownAsset> MarkdownAsset;
 
 	/** The text editor widget for editing raw Markdown. */
 	TSharedPtr<SMultiLineEditableTextBox> EditableTextBox;

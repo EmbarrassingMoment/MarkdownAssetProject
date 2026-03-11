@@ -18,6 +18,6 @@ public class MarkdownAsset : ModuleRules
 			}
 		);
 
-		PublicIncludePaths.Add(Path.Combine(ModuleDirectory, "ThirdParty", "md4c"));
+		PrivateIncludePaths.Add(Path.Combine(ModuleDirectory, "ThirdParty", "md4c"));
 	}
 }
