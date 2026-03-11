@@ -1,0 +1,316 @@
+﻿# MarkdownEditor English translation.
+# Fill out your copyright notice in the Description page of Project Settings.
+# 
+msgid ""
+msgstr ""
+"Project-Id-Version: MarkdownEditor\n"
+"POT-Creation-Date: 2026-03-11 06:13\n"
+"PO-Revision-Date: 2026-03-11 06:13\n"
+"Language-Team: \n"
+"Language: en\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#. Key:	MarkdownAssetName
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetActions.cpp(18)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetActions.cpp(18)
+msgctxt "MarkdownAssetActions,MarkdownAssetName"
+msgid "Markdown Text"
+msgstr "Markdown Text"
+
+#. Key:	MarkdownAssetCategory
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorModule.cpp(19)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorModule.cpp(19)
+msgctxt "FMarkdownAssetEditorModule,MarkdownAssetCategory"
+msgid "Markdown"
+msgstr "Markdown"
+
+#. Key:	MainTab
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(102)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(102)
+msgctxt "MarkdownAssetEditor,MainTab"
+msgid "Markdown Editor"
+msgstr "Markdown Editor"
+
+#. Key:	ToolkitName
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(154)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(154)
+msgctxt "MarkdownAssetEditor,ToolkitName"
+msgid "Markdown Asset Editor"
+msgstr "Markdown Asset Editor"
+
+#. Key:	EditMarkdownText
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(174)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(174)
+msgctxt "MarkdownAssetEditor,EditMarkdownText"
+msgid "Edit Markdown Text"
+msgstr "Edit Markdown Text"
+
+#. Key:	H1
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(284)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(284)
+msgctxt "MarkdownAssetEditor,H1"
+msgid "H1"
+msgstr "H1"
+
+#. Key:	H2
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(285)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(285)
+msgctxt "MarkdownAssetEditor,H2"
+msgid "H2"
+msgstr "H2"
+
+#. Key:	H3
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(286)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(286)
+msgctxt "MarkdownAssetEditor,H3"
+msgid "H3"
+msgstr "H3"
+
+#. Key:	Bold
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(291)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(291)
+msgctxt "MarkdownAssetEditor,Bold"
+msgid "B"
+msgstr "B"
+
+#. Key:	Italic
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(292)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(292)
+msgctxt "MarkdownAssetEditor,Italic"
+msgid "I"
+msgstr "I"
+
+#. Key:	Strikethrough
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(293)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(293)
+msgctxt "MarkdownAssetEditor,Strikethrough"
+msgid "S"
+msgstr "S"
+
+#. Key:	Code
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(298)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(298)
+msgctxt "MarkdownAssetEditor,Code"
+msgid "Code"
+msgstr "Code"
+
+#. Key:	Quote
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(299)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(299)
+msgctxt "MarkdownAssetEditor,Quote"
+msgid "Quote"
+msgstr "Quote"
+
+#. Key:	BulletList
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(304)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(304)
+msgctxt "MarkdownAssetEditor,BulletList"
+msgid "List"
+msgstr "List"
+
+#. Key:	NumberedList
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(305)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(305)
+msgctxt "MarkdownAssetEditor,NumberedList"
+msgid "1."
+msgstr "1."
+
+#. Key:	Table
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(306)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(306)
+msgctxt "MarkdownAssetEditor,Table"
+msgid "Table"
+msgstr "Table"
+
+#. Key:	HR
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(307)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(307)
+msgctxt "MarkdownAssetEditor,HR"
+msgid "HR"
+msgstr "HR"
+
+#. Key:	EditorTabLabel
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(440)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(440)
+msgctxt "MarkdownAssetEditor,EditorTabLabel"
+msgid "Markdown Editor"
+msgstr "Markdown Editor"
+
+#. Key:	MarkdownEditorCommands
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(57)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(57)
+msgctxt "MarkdownAssetEditor,MarkdownEditorCommands"
+msgid "Markdown Editor"
+msgstr "Markdown Editor"
+
+#. Key:	Bold
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(66)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(66)
+msgctxt "UICommands.MarkdownAssetEditor,Bold"
+msgid "Bold"
+msgstr "Bold"
+
+#. Key:	Bold_ToolTip
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(66)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(66)
+msgctxt "UICommands.MarkdownAssetEditor,Bold_ToolTip"
+msgid "Wrap selection with bold markers (**)"
+msgstr "Wrap selection with bold markers (**)"
+
+#. Key:	Italic
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(67)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(67)
+msgctxt "UICommands.MarkdownAssetEditor,Italic"
+msgid "Italic"
+msgstr "Italic"
+
+#. Key:	Italic_ToolTip
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(67)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(67)
+msgctxt "UICommands.MarkdownAssetEditor,Italic_ToolTip"
+msgid "Wrap selection with italic markers (*)"
+msgstr "Wrap selection with italic markers (*)"
+
+#. Key:	Strikethrough
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(68)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(68)
+msgctxt "UICommands.MarkdownAssetEditor,Strikethrough"
+msgid "Strikethrough"
+msgstr "Strikethrough"
+
+#. Key:	Strikethrough_ToolTip
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(68)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(68)
+msgctxt "UICommands.MarkdownAssetEditor,Strikethrough_ToolTip"
+msgid "Wrap selection with strikethrough markers (~~)"
+msgstr "Wrap selection with strikethrough markers (~~)"
+
+#. Key:	InsertCodeBlock
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(69)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(69)
+msgctxt "UICommands.MarkdownAssetEditor,InsertCodeBlock"
+msgid "Code Block"
+msgstr "Code Block"
+
+#. Key:	InsertCodeBlock_ToolTip
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(69)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(69)
+msgctxt "UICommands.MarkdownAssetEditor,InsertCodeBlock_ToolTip"
+msgid "Insert a fenced code block"
+msgstr "Insert a fenced code block"
+
+#. Key:	Heading1
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(70)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(70)
+msgctxt "UICommands.MarkdownAssetEditor,Heading1"
+msgid "H1"
+msgstr "H1"
+
+#. Key:	Heading1_ToolTip
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(70)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(70)
+msgctxt "UICommands.MarkdownAssetEditor,Heading1_ToolTip"
+msgid "Insert heading level 1"
+msgstr "Insert heading level 1"
+
+#. Key:	Heading2
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(71)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(71)
+msgctxt "UICommands.MarkdownAssetEditor,Heading2"
+msgid "H2"
+msgstr "H2"
+
+#. Key:	Heading2_ToolTip
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(71)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(71)
+msgctxt "UICommands.MarkdownAssetEditor,Heading2_ToolTip"
+msgid "Insert heading level 2"
+msgstr "Insert heading level 2"
+
+#. Key:	Heading3
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(72)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(72)
+msgctxt "UICommands.MarkdownAssetEditor,Heading3"
+msgid "H3"
+msgstr "H3"
+
+#. Key:	Heading3_ToolTip
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(72)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(72)
+msgctxt "UICommands.MarkdownAssetEditor,Heading3_ToolTip"
+msgid "Insert heading level 3"
+msgstr "Insert heading level 3"
+
+#. Key:	BulletList
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(73)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(73)
+msgctxt "UICommands.MarkdownAssetEditor,BulletList"
+msgid "Bullet List"
+msgstr "Bullet List"
+
+#. Key:	BulletList_ToolTip
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(73)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(73)
+msgctxt "UICommands.MarkdownAssetEditor,BulletList_ToolTip"
+msgid "Insert a bullet list item"
+msgstr "Insert a bullet list item"
+
+#. Key:	NumberedList
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(74)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(74)
+msgctxt "UICommands.MarkdownAssetEditor,NumberedList"
+msgid "Numbered List"
+msgstr "Numbered List"
+
+#. Key:	NumberedList_ToolTip
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(74)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(74)
+msgctxt "UICommands.MarkdownAssetEditor,NumberedList_ToolTip"
+msgid "Insert a numbered list item"
+msgstr "Insert a numbered list item"
+
+#. Key:	InsertTable
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(75)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(75)
+msgctxt "UICommands.MarkdownAssetEditor,InsertTable"
+msgid "Table"
+msgstr "Table"
+
+#. Key:	InsertTable_ToolTip
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(75)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(75)
+msgctxt "UICommands.MarkdownAssetEditor,InsertTable_ToolTip"
+msgid "Insert a Markdown table"
+msgstr "Insert a Markdown table"
+
+#. Key:	HorizontalRule
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(76)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(76)
+msgctxt "UICommands.MarkdownAssetEditor,HorizontalRule"
+msgid "Horizontal Rule"
+msgstr "Horizontal Rule"
+
+#. Key:	HorizontalRule_ToolTip
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(76)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(76)
+msgctxt "UICommands.MarkdownAssetEditor,HorizontalRule_ToolTip"
+msgid "Insert a horizontal rule"
+msgstr "Insert a horizontal rule"
+
+#. Key:	Blockquote
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(77)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(77)
+msgctxt "UICommands.MarkdownAssetEditor,Blockquote"
+msgid "Quote"
+msgstr "Quote"
+
+#. Key:	Blockquote_ToolTip
+#. SourceLocation:	Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(77)
+#: Plugins/MarkdownEditor/Source/MarkdownAssetEditor/Private/MarkdownAssetEditorToolkit.cpp(77)
+msgctxt "UICommands.MarkdownAssetEditor,Blockquote_ToolTip"
+msgid "Insert a blockquote"
+msgstr "Insert a blockquote"
+
