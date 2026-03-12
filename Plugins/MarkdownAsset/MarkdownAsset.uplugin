@@ -2,7 +2,7 @@
 	"FileVersion": 3,
 	"Version": 1,
 	"VersionName": "1.0.0",
-	"FriendlyName": "MarkdownEditor",
+	"FriendlyName": "MarkdownAsset",
 	"Description": "A custom Markdown asset type with a split-pane live preview editor. Supports GFM (tables, task lists, strikethrough). Import/export .md files directly from Content Browser.",
 	"Category": "Editor",
 	"CreatedBy": "Kurorekishi",
