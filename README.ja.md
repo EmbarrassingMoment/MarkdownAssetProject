@@ -6,7 +6,7 @@
 
 カスタムMarkdownアセットタイプとライブプレビューエディタを追加するUnreal Engine 5.5以降用プラグイン。
 
-![エディタ概観](docs/images/editor-overview.png)
+![エディタ概観](docs/images/editor-overview-ja.png)
 
 ## 機能
 
