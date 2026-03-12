@@ -1,6 +1,10 @@
 # MarkdownAssetProject
 
-An Unreal Engine 5.5 plugin that adds a custom Markdown asset type with a live-preview editor.
+![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.5%2B-blue)
+![License: MIT](https://img.shields.io/badge/License-MIT-green)
+![Platform: Windows](https://img.shields.io/badge/Platform-Windows-lightgrey)
+
+An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-preview editor.
 
 ![Editor Overview](docs/images/editor-overview.png)
 
@@ -44,7 +48,7 @@ An Unreal Engine 5.5 plugin that adds a custom Markdown asset type with a live-p
 
 ## Requirements
 
-- Unreal Engine 5.5
+- Unreal Engine 5.5 or later
 - C++ project (the plugin includes native modules)
 - `WebBrowserWidget` plugin (enabled automatically as a dependency)
 
@@ -55,6 +59,8 @@ An Unreal Engine 5.5 plugin that adds a custom Markdown asset type with a live-p
 3. The plugin will be loaded automatically on editor startup.
 
 ## Usage
+
+> **Quick Start:** See [QUICKSTART.md](QUICKSTART.md) for a step-by-step guide.
 
 1. In the Content Browser, right-click and select **Markdown > Markdown Text** to create a new asset.
 2. Double-click the asset to open the Markdown editor.

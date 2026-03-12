@@ -1,6 +1,10 @@
 # MarkdownAssetProject
 
-カスタムMarkdownアセットタイプとライブプレビューエディタを追加するUnreal Engine 5.5用プラグイン。
+![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.5%2B-blue)
+![License: MIT](https://img.shields.io/badge/License-MIT-green)
+![Platform: Windows](https://img.shields.io/badge/Platform-Windows-lightgrey)
+
+カスタムMarkdownアセットタイプとライブプレビューエディタを追加するUnreal Engine 5.5以降用プラグイン。
 
 ![エディタ概観](docs/images/editor-overview.png)
 
@@ -18,6 +22,7 @@
 - **元に戻す / やり直し** — Unreal Editorのトランザクションシステムと統合された完全なUndo/Redoサポート（Ctrl+Z / Ctrl+Y）
 - **セキュリティ** — ユーザー提供のMarkdownレンダリング時のXSSを防止するため、生のHTMLブロックおよびインラインHTMLはデフォルトで無効化されています
 - **ローカライズ** — エディタUIは英語と日本語に完全対応
+- **ニバイト文字対応** — 日本語などのニバイト文字を含むMarkdownテキストを正しく処理・表示します
 
 ![ダークテーマプレビュー](docs/images/dark-theme-preview.png)
 
@@ -44,7 +49,7 @@
 
 ## 要件
 
-- Unreal Engine 5.5
+- Unreal Engine 5.5 以降
 - C++プロジェクト (プラグインにネイティブモジュールが含まれているため)
 - `WebBrowserWidget` プラグイン (依存関係として自動的に有効になります)
 
@@ -55,6 +60,8 @@
 3. エディタ起動時にプラグインが自動的に読み込まれます。
 
 ## 使用方法
+
+> **クイックスタート:** ステップバイステップのガイドは [QUICKSTART.ja.md](QUICKSTART.ja.md) をご覧ください。
 
 1. コンテンツブラウザで右クリックし、**Markdown > Markdown Text** を選択して新しいアセットを作成します。
 2. アセットをダブルクリックしてMarkdownエディタを開きます。
