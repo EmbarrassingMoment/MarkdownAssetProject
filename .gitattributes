@@ -1,2 +1,28 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+
+# Unreal Engine binary assets
+*.uasset binary
+*.umap binary
+*.locres binary
+*.locmeta binary
+*.archive binary
+
+# Images
+*.png binary
+*.jpg binary
+*.gif binary
+*.ico binary
+
+# Source code (ensure LF)
+*.h text diff=cpp
+*.cpp text diff=cpp
+*.cs text diff=csharp
+*.ini text
+*.json text
+*.md text diff=markdown
+
+# Compiled resources
+*.dll binary
+*.so binary
+*.dylib binary

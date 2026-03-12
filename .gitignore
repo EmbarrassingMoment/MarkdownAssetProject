@@ -72,3 +72,15 @@ Plugins/*/Intermediate/*
 
 # Cache files for the editor to use
 DerivedDataCache/*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files (JetBrains Rider, VS Code)
+.idea/
+.vscode/
+
+# Unreal Engine additional
+*.log
+*.ScreenShot.png
