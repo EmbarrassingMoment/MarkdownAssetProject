@@ -3,6 +3,7 @@
 ![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.5%2B-blue)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green)
 ![Platform: Windows](https://img.shields.io/badge/Platform-Windows-lightgrey)
+[![Sponsor](https://img.shields.io/badge/Sponsor-EmbarrassingMoment-ff69b4?logo=github-sponsors&logoColor=white)](https://github.com/sponsors/EmbarrassingMoment)
 
 An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-preview editor.
 
