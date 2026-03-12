@@ -9,6 +9,7 @@
 	"CreatedByURL": "https://github.com/EmbarrassingMoment",
 	"DocsURL": "https://github.com/EmbarrassingMoment/MarkdownAssetProject",
 	"MarketplaceURL": "",
+	"FabURL": "com.epicgames.launcher://ue/Fab/product/21ba464a-d8fa-48f5-833d-6894dbe9fe95",
 	"SupportURL": "https://github.com/EmbarrassingMoment/MarkdownAssetProject/issues",
 	"CanContainContent": true,
 	"IsBetaVersion": false,
@@ -19,12 +20,14 @@
 		{
 			"Name": "MarkdownAsset",
 			"Type": "Runtime",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"PlatformAllowList": ["Win64"]
 		},
 		{
 			"Name": "MarkdownAssetEditor",
 			"Type": "Editor",
-			"LoadingPhase": "Default"
+			"LoadingPhase": "Default",
+			"PlatformAllowList": ["Win64"]
 		}
 	],
 	"Plugins": [
