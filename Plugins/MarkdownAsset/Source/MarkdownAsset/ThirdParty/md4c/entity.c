@@ -1,3 +1,4 @@
+// Distributed as part of MarkdownAsset plugin. Copyright (c) 2026 Kurorekishi (EmbarrassingMoment).
 /*
  * MD4C: Markdown parser for C
  * (http://github.com/mity/md4c)
