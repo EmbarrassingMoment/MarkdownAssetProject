@@ -110,6 +110,25 @@ Plugins/MarkdownEditor/
 | `MarkdownAsset` | Runtime | コアアセットクラスとMarkdownからHTMLへの変換 |
 | `MarkdownAssetEditor` | Editor | ライブプレビューを備えたカスタムアセットエディタUI |
 
+## FAQ
+
+**Q. このプラグインはパッケージ化されたゲームで動作しますか？**
+A. はい。Markdownエディタとライブプレビューはエディタ専用の機能ですが、`UMarkdownAsset` とそのBlueprintから呼び出し可能な関数（`GetParsedHTML` など）はランタイムモジュールの一部であり、パッケージ化されたビルドでも問題なく動作します。
+
+**Q. Markdownの解析にインターネット接続は必要ですか？**
+A. いいえ。プラグインはモジュールに静的リンクされた軽量な md4c Cライブラリを使用しています。すべてのMarkdownからHTMLへの変換はローカルで即座に行われます。
+
+**Q. ゲームのUIでMarkdownコンテンツを表示するにはどうすればよいですか？**
+A. いくつかの方法があります:
+1. `GetParsedHTML` Blueprintノードを使用し、その結果を WebBrowser UMG ウィジェットに渡すことで、完全にスタイリングされたテキストを表示できます。
+2. `GetPlainText` ノードを使用して、すべてのMarkdownフォーマットを除去し、標準の UMG Text Block に表示できます。
+
+**Q. VSCodeなどの外部エディタで .md ファイルを編集できますか？**
+A. はい。任意の `.md` または `.markdown` ファイルをコンテンツブラウザにインポートできます。外部で元のファイルを編集した場合は、Unreal Engineでアセットを右クリックし、**Reimport** を選択するだけで更新できます。
+
+**Q. WebBrowserWidget プラグインは必須ですか？**
+A. はい。カスタムエディタでライブHTMLプレビューを描画するには、エンジン組み込みの WebBrowserWidget プラグインが必要です。このプラグインが自動的に有効化します。
+
 ## ライセンス
 
 このプロジェクトは [MIT License](LICENSE) の下でライセンスされています。

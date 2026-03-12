@@ -110,6 +110,25 @@ Plugins/MarkdownEditor/
 | `MarkdownAsset` | Runtime | Core asset class and Markdown-to-HTML conversion |
 | `MarkdownAssetEditor` | Editor | Custom asset editor UI with live preview |
 
+## FAQ
+
+**Q. Does this plugin work in packaged games?**
+A. Yes. While the Markdown Editor and live preview are editor-only features, the `UMarkdownAsset` and its Blueprint-callable functions (like `GetParsedHTML`) are part of the runtime module and work perfectly in packaged builds.
+
+**Q. Do I need an internet connection to parse Markdown?**
+A. No. The plugin uses the lightweight md4c C library statically linked into the module. All Markdown-to-HTML conversion is done locally and instantly on your machine.
+
+**Q. How do I display the Markdown content in my game's UI?**
+A. You have a few options:
+1. Use the `GetParsedHTML` Blueprint node and feed the result into a WebBrowser UMG widget for fully styled text.
+2. Use the `GetPlainText` node to strip all Markdown formatting and display it in a standard UMG Text Block.
+
+**Q. Can I edit my .md files in an external editor like VSCode?**
+A. Yes. You can import any `.md` or `.markdown` file into the Content Browser. If you edit the original file externally, simply right-click the asset in Unreal Engine and select **Reimport** to update it.
+
+**Q. Is the WebBrowserWidget plugin required?**
+A. Yes. The Engine's built-in WebBrowserWidget plugin is required to render the live HTML preview in the custom editor. This plugin will automatically enable it for you.
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
