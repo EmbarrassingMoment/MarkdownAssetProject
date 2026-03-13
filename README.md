@@ -1,5 +1,7 @@
 # MarkdownAssetProject
 
+> **日本語版はこちら: [README.ja.md](README.ja.md)**
+
 ![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.5%2B-blue)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green)
 ![Platform: Windows](https://img.shields.io/badge/Platform-Windows-lightgrey)
