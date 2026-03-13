@@ -110,6 +110,26 @@ Plugins/MarkdownEditor/
 | `MarkdownAsset` | Runtime | Core asset class and Markdown-to-HTML conversion |
 | `MarkdownAssetEditor` | Editor | Custom asset editor UI with live preview |
 
+## Planned Features
+
+### Editor
+- **Syntax Highlighting** — Color-coded Markdown syntax in the text editor
+- **Find & Replace** — In-editor text search and replace (Ctrl+F / Ctrl+H)
+- **Theme Switching** — Light theme and user-selectable theme options
+
+### Preview
+- **Mermaid Diagrams** — Render flowcharts, sequence diagrams, and more via Mermaid
+- **Image Preview** — Display referenced images in the HTML preview pane
+
+### Asset Pipeline
+- **PDF / HTML Export** — Export Markdown assets as PDF or standalone HTML files
+
+### Platform
+- **Multi-platform Support** — macOS and Linux compatibility
+
+### Runtime
+- **UMG Markdown Widget** — A UMG widget for rendering Markdown directly in game UI
+
 ## FAQ
 
 **Q. Does this plugin work in packaged games?**
