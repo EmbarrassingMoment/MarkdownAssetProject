@@ -22,9 +22,9 @@
 - **Blueprint サポート** — Blueprint から `RawMarkdownText` の読み書きと `GetParsedHTML()`、`GetRawMarkdownText()`、`GetPlainText()` の呼び出しが可能。
 - **ツールバーとキーボードショートカット** — 一般的なMarkdown操作のためのキーボードショートカットを備えた組み込みのフォーマットツールバー。
 - **元に戻す / やり直し** — Unreal Editorのトランザクションシステムと統合された完全なUndo/Redoサポート（Ctrl+Z / Ctrl+Y）
-- **セキュリティ** — ユーザー提供のMarkdownレンダリング時のXSSを防止するため、生のHTMLブロックおよびインラインHTMLはデフォルトで無効化されています
-- **ローカライズ** — エディタUIは英語と日本語に完全対応
-- **ニバイト文字対応** — 日本語などのニバイト文字を含むMarkdownテキストを正しく処理・表示します
+- **セキュリティ** — ユーザー提供のMarkdownレンダリング時のXSSを防止するため、生のHTMLブロックおよびインラインHTMLはデフォルトで無効化。
+- **ローカライズ** — エディタUIは英語と日本語に完全対応。
+- **ニバイト文字対応** — 日本語などのニバイト文字を含むMarkdownテキストを正しく処理・表示。
 
 ![ダークテーマプレビュー](docs/images/dark-theme-preview.png)
 
@@ -129,7 +129,7 @@ Plugins/MarkdownEditor/
 ### プラットフォーム
 - **マルチプラットフォーム対応** — macOSおよびLinuxへの対応
 
-### ランタイム
+### 必須ランタイム
 - **UMG Markdownウィジェット** — ゲーム内UIでMarkdownを直接レンダリングするUMGウィジェット
 
 ## FAQ
