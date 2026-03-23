@@ -5,6 +5,7 @@
 ![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.5%2B-blue)
 ![License: MIT](https://img.shields.io/badge/License-MIT-green)
 ![Platform: Windows](https://img.shields.io/badge/Platform-Windows-lightgrey)
+[![Available on FAB](https://img.shields.io/badge/FAB-Available-blue?logo=unrealengine&logoColor=white)](https://www.fab.com/listings/21ba464a-d8fa-48f5-833d-6894dbe9fe95)
 
 カスタムMarkdownアセットタイプとライブプレビューエディタを追加するUnreal Engine 5.5以降用プラグイン。
 
