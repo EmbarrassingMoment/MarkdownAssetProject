@@ -2,6 +2,10 @@
 
 #include "MarkdownAsset.h"
 
+#if WITH_EDITOR
+#include "UObject/UnrealType.h"
+#endif
+
 extern "C" {
 #include "md4c.h"
 #include "md4c-html.h"
@@ -164,3 +168,12 @@ FString UMarkdownAsset::GetPlainText() const
 
 	return ExtractData.OutputText;
 }
+
+#if WITH_EDITOR
+void UMarkdownAsset::PostEditChangeProperty(FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	bThumbnailCacheValid = false;
+}
+#endif

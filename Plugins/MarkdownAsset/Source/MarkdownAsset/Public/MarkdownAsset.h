@@ -25,6 +25,17 @@ public:
 	FString SourceFilePath;
 #endif
 
+#if WITH_EDITOR
+	/** Cached lines for thumbnail preview. */
+	TArray<FString> CachedThumbnailLines;
+
+	/** Whether the thumbnail cache is valid. */
+	bool bThumbnailCacheValid = false;
+
+	/** Resets the thumbnail cache when the asset is modified. */
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
+
 	/** Parses the raw Markdown text into an HTML string. */
 	UFUNCTION(BlueprintCallable, Category = "Markdown")
 	FString GetParsedHTML() const;

@@ -39,17 +39,26 @@ void UMarkdownAssetThumbnailRenderer::Draw(UObject* Object, int32 X, int32 Y, ui
 	UFont* SmallFont = GEngine ? GEngine->GetSmallFont() : nullptr;
 	if (SmallFont && !MarkdownAsset->RawMarkdownText.IsEmpty())
 	{
-		FString PreviewText = MarkdownAsset->RawMarkdownText.Left(200);
+		if (!MarkdownAsset->bThumbnailCacheValid)
+		{
+			FString PreviewText = MarkdownAsset->RawMarkdownText.Left(200);
 
-		// Split into lines and draw first few
-		TArray<FString> Lines;
-		PreviewText.ParseIntoArrayLines(Lines);
+			// Split into lines and draw first few
+			TArray<FString> Lines;
+			PreviewText.ParseIntoArrayLines(Lines);
+
+			MarkdownAsset->CachedThumbnailLines.Empty();
+			int32 MaxLinesToCache = FMath::Min(Lines.Num(), 8);
+			for (int32 i = 0; i < MaxLinesToCache; i++)
+			{
+				MarkdownAsset->CachedThumbnailLines.Add(Lines[i].Left(40));
+			}
+			MarkdownAsset->bThumbnailCacheValid = true;
+		}
 
 		float LineY = Y + 40.0f;
-		int32 MaxLines = FMath::Min(Lines.Num(), 8);
-		for (int32 i = 0; i < MaxLines; i++)
+		for (const FString& Line : MarkdownAsset->CachedThumbnailLines)
 		{
-			FString Line = Lines[i].Left(40);
 			FCanvasTextItem TextItem(FVector2D(X + 6, LineY), FText::FromString(Line), SmallFont, FLinearColor(0.8f, 0.8f, 0.8f, 1.0f));
 			TextItem.Scale = FVector2D(0.8f, 0.8f);
 			Canvas->DrawItem(TextItem);
