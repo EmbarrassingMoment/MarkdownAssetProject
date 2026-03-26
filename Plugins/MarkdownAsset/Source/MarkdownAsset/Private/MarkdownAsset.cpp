@@ -37,7 +37,7 @@ FString UMarkdownAsset::GetParsedHTML() const
 	MD_SIZE MdSize = Utf8String.Length();
 
 	// Parse markdown to HTML (disable raw HTML blocks/spans to prevent XSS)
-	const unsigned MdFlags = MD_DIALECT_GITHUB | MD_FLAG_NOHTMLBLOCKS | MD_FLAG_NOHTMLSPANS;
+	const unsigned MdFlags = MD_DIALECT_GITHUB | MD_FLAG_NOHTMLBLOCKS | MD_FLAG_NOHTMLSPANS | MD_FLAG_WIKILINKS;
 	int Result = md_html(MdInput, MdSize, MarkdownHtmlProcessOutputCallback, &OutputHtml, MdFlags, 0);
 	if (Result != 0)
 	{
@@ -147,7 +147,7 @@ FString UMarkdownAsset::GetPlainText() const
 	// Set up the parser to extract text only (disable raw HTML blocks/spans)
 	MD_PARSER Parser = {};
 	Parser.abi_version = 0;
-	Parser.flags = MD_DIALECT_GITHUB | MD_FLAG_NOHTMLBLOCKS | MD_FLAG_NOHTMLSPANS;
+	Parser.flags = MD_DIALECT_GITHUB | MD_FLAG_NOHTMLBLOCKS | MD_FLAG_NOHTMLSPANS | MD_FLAG_WIKILINKS;
 	Parser.enter_block = PlainTextEnterBlock;
 	Parser.leave_block = PlainTextLeaveBlock;
 	Parser.enter_span = PlainTextEnterSpan;
