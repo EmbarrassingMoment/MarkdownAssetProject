@@ -345,17 +345,24 @@ void FMarkdownAssetEditorToolkit::InsertAtLineStart(const FString& Prefix)
 	FTextLocation CursorLocation = EditableTextBox->GetCursorLocation();
 	int32 LineIndex = CursorLocation.GetLineIndex();
 
-	// Split text into lines, insert prefix at the target line, and reassemble
-	TArray<FString> Lines;
-	TextStr.ParseIntoArray(Lines, TEXT("\n"), false);
-
-	if (LineIndex >= 0 && LineIndex < Lines.Num())
+	// Find the character index for the start of the current line
+	int32 CharIndex = 0;
+	for (int32 i = 0; i < LineIndex; ++i)
 	{
-		Lines[LineIndex] = Prefix + Lines[LineIndex];
+		int32 NextNewline = TextStr.Find(TEXT("\n"), ESearchCase::CaseSensitive, ESearchDir::FromStart, CharIndex);
+		if (NextNewline != INDEX_NONE)
+		{
+			CharIndex = NextNewline + 1;
+		}
+		else
+		{
+			break;
+		}
 	}
 
-	FString NewText = FString::Join(Lines, TEXT("\n"));
-	EditableTextBox->SetText(FText::FromString(NewText));
+	// Insert the prefix directly into the string
+	TextStr.InsertAt(CharIndex, Prefix);
+	EditableTextBox->SetText(FText::FromString(TextStr));
 }
 
 void FMarkdownAssetEditorToolkit::InsertTextAtCursor(const FString& Text)
