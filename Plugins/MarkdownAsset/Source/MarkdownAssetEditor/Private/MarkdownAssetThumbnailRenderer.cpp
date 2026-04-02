@@ -39,21 +39,54 @@ void UMarkdownAssetThumbnailRenderer::Draw(UObject* Object, int32 X, int32 Y, ui
 	UFont* SmallFont = GEngine ? GEngine->GetSmallFont() : nullptr;
 	if (SmallFont && !MarkdownAsset->RawMarkdownText.IsEmpty())
 	{
-		FString PreviewText = MarkdownAsset->RawMarkdownText.Left(200);
-
-		// Split into lines and draw first few
-		TArray<FString> Lines;
-		PreviewText.ParseIntoArrayLines(Lines);
+		const FString& RawText = MarkdownAsset->RawMarkdownText;
+		int32 TextLen = FMath::Min(RawText.Len(), 200);
 
 		float LineY = Y + 40.0f;
-		int32 MaxLines = FMath::Min(Lines.Num(), 8);
-		for (int32 i = 0; i < MaxLines; i++)
+		int32 LineCount = 0;
+		int32 CurrentPos = 0;
+
+		while (LineCount < 8 && CurrentPos < TextLen)
 		{
-			FString Line = Lines[i].Left(40);
-			FCanvasTextItem TextItem(FVector2D(X + 6, LineY), FText::FromString(Line), SmallFont, FLinearColor(0.8f, 0.8f, 0.8f, 1.0f));
-			TextItem.Scale = FVector2D(0.8f, 0.8f);
-			Canvas->DrawItem(TextItem);
-			LineY += 14.0f;
+			int32 NextNewlinePos = -1;
+			int32 SubStrLen = TextLen - CurrentPos;
+
+			// Find next newline up to 200 character limit
+			for (int32 i = CurrentPos; i < TextLen; ++i)
+			{
+				if (RawText[i] == TEXT('\n') || RawText[i] == TEXT('\r'))
+				{
+					NextNewlinePos = i;
+					SubStrLen = i - CurrentPos;
+					break;
+				}
+			}
+
+			// ParseIntoArrayLines culls empty strings by default
+			if (SubStrLen > 0)
+			{
+				int32 DrawLen = FMath::Min(SubStrLen, 40);
+				FString Line = RawText.Mid(CurrentPos, DrawLen);
+				FCanvasTextItem TextItem(FVector2D(X + 6, LineY), FText::FromString(Line), SmallFont, FLinearColor(0.8f, 0.8f, 0.8f, 1.0f));
+				TextItem.Scale = FVector2D(0.8f, 0.8f);
+				Canvas->DrawItem(TextItem);
+				LineY += 14.0f;
+				LineCount++;
+			}
+
+			if (NextNewlinePos != -1)
+			{
+				CurrentPos = NextNewlinePos + 1;
+				// Handle \r\n
+				if (CurrentPos < TextLen && RawText[NextNewlinePos] == TEXT('\r') && RawText[CurrentPos] == TEXT('\n'))
+				{
+					CurrentPos++;
+				}
+			}
+			else
+			{
+				break;
+			}
 		}
 	}
 }
