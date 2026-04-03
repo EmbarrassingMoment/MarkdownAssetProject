@@ -17,8 +17,13 @@
 #include "Misc/Base64.h"
 #include "ScopedTransaction.h"
 #include "Framework/MultiBox/MultiBoxBuilder.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "Subsystems/AssetEditorSubsystem.h"
+#include "GenericPlatform/GenericPlatformHttp.h"
 
 #define LOCTEXT_NAMESPACE "MarkdownAssetEditor"
+
+DEFINE_LOG_CATEGORY_STATIC(LogMarkdownAssetEditor, Log, All);
 
 // ---- Styled HTML Generation ----
 
@@ -45,6 +50,8 @@ static FString GenerateStyledHtml(const FString& ParsedHtml)
 		"hr { border: none; border-top: 1px solid #444; margin: 20px 0; }\n"
 		"img { max-width: 100%%; height: auto; }\n"
 		"del { color: #888; }\n"
+"a[href^=\"mdasset://\"] { color: #4ec9b0; text-decoration: none; border-bottom: 1px dashed #4ec9b0; cursor: pointer; }\n"
+"a[href^=\"mdasset://\"]:hover { color: #6fe0c8; border-bottom-style: solid; }\n"
 		"</style></head><body>\n%s\n</body></html>"
 	), *ParsedHtml);
 }
@@ -460,6 +467,7 @@ TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabA
 				SAssignNew(WebBrowserWidget, SWebBrowser)
 				.ShowControls(false)
 				.ShowAddressBar(false)
+				.OnBeforeNavigation(this, &FMarkdownAssetEditorToolkit::HandleBeforeNavigation)
 			]
 		];
 
@@ -470,6 +478,63 @@ TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabA
 	}
 
 	return SpawnedTab;
+}
+
+// ---- Wikilink Navigation ----
+
+bool FMarkdownAssetEditorToolkit::HandleBeforeNavigation(const FString& Url, const FWebNavigationRequest& Request)
+{
+	// Allow data: URLs for preview loading
+	if (Url.StartsWith(TEXT("data:")))
+	{
+		return false;
+	}
+
+	// Handle mdasset:// scheme for wikilinks
+	static const FString Scheme = TEXT("mdasset://");
+	if (Url.StartsWith(Scheme))
+	{
+		FString AssetName = Url.Mid(Scheme.Len());
+		AssetName = FGenericPlatformHttp::UrlDecode(AssetName);
+		OpenLinkedMarkdownAsset(AssetName);
+		return true;
+	}
+
+	// Open external URLs in the system browser
+	if (Url.StartsWith(TEXT("http://")) || Url.StartsWith(TEXT("https://")))
+	{
+		FPlatformProcess::LaunchURL(*Url, nullptr, nullptr);
+		return true;
+	}
+
+	return false;
+}
+
+void FMarkdownAssetEditorToolkit::OpenLinkedMarkdownAsset(const FString& AssetName)
+{
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+
+	TArray<FAssetData> FoundAssets;
+	AssetRegistry.GetAssetsByClass(UMarkdownAsset::StaticClass()->GetClassPathName(), FoundAssets);
+
+	const FAssetData* MatchedAsset = FoundAssets.FindByPredicate(
+		[&AssetName](const FAssetData& Asset)
+		{
+			return Asset.AssetName.ToString() == AssetName;
+		});
+
+	if (MatchedAsset)
+	{
+		if (UObject* LoadedAsset = MatchedAsset->GetAsset())
+		{
+			GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OpenEditorForAsset(LoadedAsset);
+		}
+	}
+	else
+	{
+		UE_LOG(LogMarkdownAssetEditor, Warning, TEXT("Wikilink target not found: '%s'"), *AssetName);
+	}
 }
 
 #undef LOCTEXT_NAMESPACE

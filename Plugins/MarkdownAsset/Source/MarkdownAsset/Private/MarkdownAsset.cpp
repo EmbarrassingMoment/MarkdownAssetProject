@@ -7,7 +7,45 @@ extern "C" {
 #include "md4c-html.h"
 }
 
+#include "Internationalization/Regex.h"
+#include "GenericPlatform/GenericPlatformHttp.h"
+
 DEFINE_LOG_CATEGORY_STATIC(LogMarkdownAsset, Log, All);
+
+/**
+ * Converts md4c-html wikilink elements to anchor tags with the mdasset:// scheme.
+ * Input:  <x-wikilink data-target="Name">Name</x-wikilink>
+ * Output: <a href="mdasset://EncodedName">Name</a>
+ */
+static FString PostProcessWikilinks(const FString& Html)
+{
+	FString Result = Html;
+
+	// Replace opening <x-wikilink data-target="..."> tags with <a href="mdasset://...">
+	const FRegexPattern OpenPattern(TEXT("<x-wikilink data-target=\"([^\"]*)\">"));
+	FRegexMatcher Matcher(OpenPattern, Result);
+
+	FString Processed;
+	int32 LastPos = 0;
+
+	while (Matcher.FindNext())
+	{
+		Processed += Result.Mid(LastPos, Matcher.GetMatchBeginning() - LastPos);
+
+		FString Target = Matcher.GetCaptureGroup(1);
+		FString EncodedTarget = FGenericPlatformHttp::UrlEncode(Target);
+		Processed += FString::Printf(TEXT("<a href=\"mdasset://%s\">"), *EncodedTarget);
+
+		LastPos = Matcher.GetMatchEnding();
+	}
+	Processed += Result.Mid(LastPos);
+	Result = Processed;
+
+	// Replace closing </x-wikilink> tags with </a>
+	Result = Result.Replace(TEXT("</x-wikilink>"), TEXT("</a>"));
+
+	return Result;
+}
 
 /**
  * Helper function for md4c-html callback to append output to a string.
@@ -44,6 +82,8 @@ FString UMarkdownAsset::GetParsedHTML() const
 		UE_LOG(LogMarkdownAsset, Error, TEXT("md_html() failed to parse Markdown (error code: %d)"), Result);
 		return FString();
 	}
+
+	OutputHtml = PostProcessWikilinks(OutputHtml);
 
 	return OutputHtml;
 }
