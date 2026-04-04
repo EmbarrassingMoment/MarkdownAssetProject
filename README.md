@@ -21,6 +21,7 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 - **Content Browser Integration** — Create new Markdown assets directly from the context menu, with custom thumbnail previews showing the "MD" label and the first few lines of content
 - **Import / Export** — Drag-and-drop `.md` / `.markdown` files into the Content Browser to import, reimport from source files, or export assets back to `.md`
 - **GitHub Flavored Markdown** — Supports GFM extensions such as tables, task lists, and strikethrough via the `MD_DIALECT_GITHUB` flag
+- **Wikilinks** — Write `[[AssetName]]` to create inter-asset links; clicking a wikilink in the preview opens the target Markdown asset in a new editor tab. Broken links (pointing to non-existent assets) are highlighted in red
 - **Blueprint Support** — Read/write `RawMarkdownText` and call `GetParsedHTML()`, `GetRawMarkdownText()`, and `GetPlainText()` from Blueprints
 - **Toolbar & Keyboard Shortcuts** — Built-in formatting toolbar with keyboard shortcuts for common Markdown operations
 - **Undo / Redo** — Full undo/redo support integrated with the Unreal Editor transaction system (Ctrl+Z / Ctrl+Y)

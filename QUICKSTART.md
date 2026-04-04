@@ -44,6 +44,19 @@ Get up and running with the Markdown Editor plugin in minutes.
 
 ![Blueprint Nodes](docs/images/blueprint-nodes.png)
 
+## 5. Link Between Assets with Wikilinks
+
+Use `[[AssetName]]` syntax to create links between Markdown assets:
+
+```markdown
+See also: [[MyOtherDocument]]
+```
+
+- In the preview, wikilinks appear in **teal** with a dashed underline.
+- Click a wikilink to open the target Markdown asset in a new editor tab.
+- Links to non-existent assets are shown in **red** so you can spot broken references at a glance.
+- Standard Markdown links (`[text](https://...)`) open in your system browser.
+
 ## Key Shortcuts
 
 | Shortcut | Action |

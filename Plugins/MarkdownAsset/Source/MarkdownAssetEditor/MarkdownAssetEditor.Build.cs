@@ -28,7 +28,8 @@ public class MarkdownAssetEditor : ModuleRules
 				"AssetTools",
 				"AppFramework",
 				"WorkspaceMenuStructure",
-				"WebBrowser"
+				"WebBrowser",
+				"AssetRegistry"
 			}
 		);
 	}

@@ -12,6 +12,7 @@
 class UMarkdownAsset;
 class SMultiLineEditableTextBox;
 class SWebBrowser;
+struct FWebNavigationRequest;
 
 /**
  * UI Commands for the Markdown editor toolbar and keyboard shortcuts.
@@ -138,6 +139,12 @@ private:
 	void OnHorizontalRule();
 	/** Inserts a blockquote prefix at the cursor. */
 	void OnBlockquote();
+
+	/** Intercepts navigation in the preview browser to handle mdasset:// links. */
+	bool HandleBeforeNavigation(const FString& Url, const FWebNavigationRequest& Request);
+
+	/** Opens a linked Markdown asset by name via the Asset Registry. */
+	void OpenLinkedMarkdownAsset(const FString& AssetName);
 
 	/** Timer handle for debouncing preview updates after text changes. */
 	FTimerHandle PreviewUpdateTimerHandle;
