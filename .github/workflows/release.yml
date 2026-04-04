@@ -1,0 +1,59 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Get version from tag
+        id: version
+        run: echo "VERSION=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+
+      - name: Extract changelog section
+        id: changelog
+        run: |
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+
+          NOTES=$(sed -n "/^## \[${TAG_VERSION}\]/,/^## \[/{/^## \[/!p;}" CHANGELOG.md)
+
+          if [ -z "$NOTES" ]; then
+            NOTES="No changelog entry found for version ${TAG_VERSION}."
+          fi
+
+          {
+            echo "NOTES<<CHANGELOG_EOF"
+            echo "$NOTES"
+            echo "CHANGELOG_EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Create release zip
+        run: |
+          ARCHIVE_NAME="MarkdownAsset-${GITHUB_REF_NAME}.zip"
+
+          mkdir -p staging/MarkdownAsset
+          cp -r Plugins/MarkdownAsset/* staging/MarkdownAsset/
+          cp README.md README.ja.md LICENSE CHANGELOG.md staging/MarkdownAsset/
+
+          cd staging
+          zip -r "../${ARCHIVE_NAME}" MarkdownAsset/
+          cd ..
+
+          echo "ARCHIVE_NAME=${ARCHIVE_NAME}" >> "$GITHUB_ENV"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: ${{ github.ref_name }}
+          body: ${{ steps.changelog.outputs.NOTES }}
+          files: ${{ env.ARCHIVE_NAME }}
