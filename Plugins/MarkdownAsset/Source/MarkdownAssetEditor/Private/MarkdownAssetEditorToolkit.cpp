@@ -447,21 +447,42 @@ void FMarkdownAssetEditorToolkit::InsertAtLineStart(const FString& Prefix)
 	FText CurrentText = EditableTextBox->GetText();
 	FString TextStr = CurrentText.ToString();
 
-	// Get the cursor location to determine the current line
 	FTextLocation CursorLocation = EditableTextBox->GetCursorLocation();
 	int32 LineIndex = CursorLocation.GetLineIndex();
+	int32 Offset = CursorLocation.GetOffset();
 
-	// Split text into lines, insert prefix at the target line, and reassemble
-	TArray<FString> Lines;
-	TextStr.ParseIntoArray(Lines, TEXT("\n"), false);
+	// Find the start of the line at LineIndex by counting \n characters
+	int32 CurrentLine = 0;
+	int32 LineStartPos = 0;
 
-	if (LineIndex >= 0 && LineIndex < Lines.Num())
+	for (int32 i = 0; i < TextStr.Len() && CurrentLine < LineIndex; ++i)
 	{
-		Lines[LineIndex] = Prefix + Lines[LineIndex];
+		if (TextStr[i] == TEXT('\n'))
+		{
+			++CurrentLine;
+			LineStartPos = i + 1;
+		}
 	}
 
-	FString NewText = FString::Join(Lines, TEXT("\n"));
-	EditableTextBox->SetText(FText::FromString(NewText));
+	// Compute approximate absolute cursor position, clamped to text length
+	int32 CursorAbsPos = FMath::Min(LineStartPos + Offset, TextStr.Len());
+
+	// Search backward from cursor to find the true logical line start
+	int32 LogicalLineStart = 0;
+	for (int32 i = CursorAbsPos - 1; i >= 0; --i)
+	{
+		if (TextStr[i] == TEXT('\n'))
+		{
+			LogicalLineStart = i + 1;
+			break;
+		}
+	}
+
+	// Insert prefix at the logical line start
+	TextStr.InsertAt(LogicalLineStart, Prefix);
+
+	EditableTextBox->SetText(FText::FromString(TextStr));
+	EditableTextBox->GoTo(FTextLocation(LineIndex, Offset + Prefix.Len()));
 }
 
 void FMarkdownAssetEditorToolkit::InsertTextAtCursor(const FString& Text)
