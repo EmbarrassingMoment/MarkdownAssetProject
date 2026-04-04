@@ -8,9 +8,34 @@ extern "C" {
 }
 
 #include "Internationalization/Regex.h"
-#include "GenericPlatform/GenericPlatformHttp.h"
 
 DEFINE_LOG_CATEGORY_STATIC(LogMarkdownAsset, Log, All);
+
+/** Percent-encodes a string for use in a URI, preserving unreserved characters (RFC 3986). */
+static FString PercentEncode(const FString& Input)
+{
+	FTCHARToUTF8 Utf8(*Input);
+	const char* Data = Utf8.Get();
+	int32 Len = Utf8.Length();
+
+	FString Encoded;
+	Encoded.Reserve(Len * 3);
+
+	for (int32 i = 0; i < Len; ++i)
+	{
+		uint8 Ch = static_cast<uint8>(Data[i]);
+		if ((Ch >= 'A' && Ch <= 'Z') || (Ch >= 'a' && Ch <= 'z') || (Ch >= '0' && Ch <= '9')
+			|| Ch == '-' || Ch == '_' || Ch == '.' || Ch == '~')
+		{
+			Encoded.AppendChar(static_cast<TCHAR>(Ch));
+		}
+		else
+		{
+			Encoded += FString::Printf(TEXT("%%%02X"), Ch);
+		}
+	}
+	return Encoded;
+}
 
 /**
  * Converts md4c-html wikilink elements to anchor tags with the mdasset:// scheme.
@@ -33,7 +58,7 @@ static FString PostProcessWikilinks(const FString& Html)
 		Processed += Result.Mid(LastPos, Matcher.GetMatchBeginning() - LastPos);
 
 		FString Target = Matcher.GetCaptureGroup(1);
-		FString EncodedTarget = FGenericPlatformHttp::UrlEncode(Target);
+		FString EncodedTarget = PercentEncode(Target);
 		Processed += FString::Printf(TEXT("<a href=\"mdasset://%s\">"), *EncodedTarget);
 
 		LastPos = Matcher.GetMatchEnding();

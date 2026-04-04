@@ -19,11 +19,40 @@
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Subsystems/AssetEditorSubsystem.h"
-#include "GenericPlatform/GenericPlatformHttp.h"
 
 #define LOCTEXT_NAMESPACE "MarkdownAssetEditor"
 
 DEFINE_LOG_CATEGORY_STATIC(LogMarkdownAssetEditor, Log, All);
+
+/** Decodes a percent-encoded URI string back to a regular FString. */
+static FString PercentDecode(const FString& Input)
+{
+	TArray<uint8> Bytes;
+	Bytes.Reserve(Input.Len());
+
+	for (int32 i = 0; i < Input.Len(); ++i)
+	{
+		if (Input[i] == TEXT('%') && i + 2 < Input.Len())
+		{
+			FString HexStr = Input.Mid(i + 1, 2);
+			uint8 Value = static_cast<uint8>(FCString::Strtoi(*HexStr, nullptr, 16));
+			Bytes.Add(Value);
+			i += 2;
+		}
+		else if (Input[i] == TEXT('+'))
+		{
+			Bytes.Add(static_cast<uint8>(' '));
+		}
+		else
+		{
+			// ASCII range character
+			Bytes.Add(static_cast<uint8>(Input[i] & 0xFF));
+		}
+	}
+
+	FUTF8ToTCHAR Converter(reinterpret_cast<const ANSICHAR*>(Bytes.GetData()), Bytes.Num());
+	return FString(Converter.Length(), Converter.Get());
+}
 
 // ---- Styled HTML Generation ----
 
@@ -495,7 +524,7 @@ bool FMarkdownAssetEditorToolkit::HandleBeforeNavigation(const FString& Url, con
 	if (Url.StartsWith(Scheme))
 	{
 		FString AssetName = Url.Mid(Scheme.Len());
-		AssetName = FGenericPlatformHttp::UrlDecode(AssetName);
+		AssetName = PercentDecode(AssetName);
 		OpenLinkedMarkdownAsset(AssetName);
 		return true;
 	}
