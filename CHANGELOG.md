@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-04-04
+
+### Added
+
+- **Wikilink Support** — Write `[[AssetName]]` in Markdown to create navigable links between Markdown assets
+- **Wikilink Navigation** — Clicking a wikilink in the HTML preview opens the target `UMarkdownAsset` in a new editor tab
+- **Broken Link Detection** — Wikilinks pointing to non-existent assets are automatically highlighted in red; valid links appear in teal
+- **External URL Handling** — Clicking `http://` or `https://` links in the preview opens them in the system browser instead of navigating within the preview pane
+
 ## [1.0.0] - 2026-03-11
 
 ### Added
