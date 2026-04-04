@@ -140,7 +140,7 @@ static FString MarkBrokenWikilinks(const FString& Html)
 
 		if (ExistingNames.Contains(AssetName))
 		{
-			Result += Matcher.GetMatch();
+			Result += Html.Mid(Matcher.GetMatchBeginning(), Matcher.GetMatchEnding() - Matcher.GetMatchBeginning());
 		}
 		else
 		{
