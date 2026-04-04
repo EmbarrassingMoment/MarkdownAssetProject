@@ -19,6 +19,7 @@
 #include "Framework/MultiBox/MultiBoxBuilder.h"
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Subsystems/AssetEditorSubsystem.h"
+#include "Internationalization/Regex.h"
 
 #define LOCTEXT_NAMESPACE "MarkdownAssetEditor"
 
@@ -81,8 +82,76 @@ static FString GenerateStyledHtml(const FString& ParsedHtml)
 		"del { color: #888; }\n"
 "a[href^=\"mdasset://\"] { color: #4ec9b0; text-decoration: none; border-bottom: 1px dashed #4ec9b0; cursor: pointer; }\n"
 "a[href^=\"mdasset://\"]:hover { color: #6fe0c8; border-bottom-style: solid; }\n"
+"a.md-broken-link { color: #f44747; border-bottom-color: #f44747; }\n"
+"a.md-broken-link:hover { color: #ff6b6b; }\n"
 		"</style></head><body>\n%s\n</body></html>"
 	), *ParsedHtml);
+}
+
+/**
+ * Checks each mdasset:// link against the AssetRegistry and adds the
+ * "md-broken-link" CSS class to links whose target asset does not exist.
+ */
+static FString MarkBrokenWikilinks(const FString& Html)
+{
+	// Collect existing MarkdownAsset names
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+
+	TArray<FAssetData> AllMarkdownAssets;
+	AssetRegistry.GetAssetsByClass(UMarkdownAsset::StaticClass()->GetClassPathName(), AllMarkdownAssets);
+
+	TSet<FString> ExistingNames;
+	for (const FAssetData& Asset : AllMarkdownAssets)
+	{
+		ExistingNames.Add(Asset.AssetName.ToString());
+	}
+
+	// Find mdasset:// links and add md-broken-link class if target not found
+	const FRegexPattern LinkPattern(TEXT("<a href=\"mdasset://([^\"]*)\""));
+	FRegexMatcher Matcher(LinkPattern, Html);
+
+	FString Result;
+	int32 LastPos = 0;
+
+	while (Matcher.FindNext())
+	{
+		Result += Html.Mid(LastPos, Matcher.GetMatchBeginning() - LastPos);
+
+		FString EncodedTarget = Matcher.GetCaptureGroup(1);
+
+		// Percent-decode to get the original asset name
+		TArray<uint8> Bytes;
+		for (int32 i = 0; i < EncodedTarget.Len(); ++i)
+		{
+			if (EncodedTarget[i] == TEXT('%') && i + 2 < EncodedTarget.Len())
+			{
+				FString HexStr = EncodedTarget.Mid(i + 1, 2);
+				Bytes.Add(static_cast<uint8>(FCString::Strtoi(*HexStr, nullptr, 16)));
+				i += 2;
+			}
+			else
+			{
+				Bytes.Add(static_cast<uint8>(EncodedTarget[i] & 0xFF));
+			}
+		}
+		FUTF8ToTCHAR Converter(reinterpret_cast<const ANSICHAR*>(Bytes.GetData()), Bytes.Num());
+		FString AssetName(Converter.Length(), Converter.Get());
+
+		if (ExistingNames.Contains(AssetName))
+		{
+			Result += Matcher.GetMatch();
+		}
+		else
+		{
+			Result += FString::Printf(TEXT("<a class=\"md-broken-link\" href=\"mdasset://%s\""), *EncodedTarget);
+		}
+
+		LastPos = Matcher.GetMatchEnding();
+	}
+	Result += Html.Mid(LastPos);
+
+	return Result;
 }
 
 // ---- FMarkdownEditorCommands ----
@@ -231,6 +300,7 @@ void FMarkdownAssetEditorToolkit::UpdatePreview()
 	if (MarkdownAsset && WebBrowserWidget.IsValid())
 	{
 		FString ParsedHtml = MarkdownAsset->GetParsedHTML();
+		ParsedHtml = MarkBrokenWikilinks(ParsedHtml);
 		FString StyledHtml = GenerateStyledHtml(ParsedHtml);
 
 		// Explicitly convert FString (UTF-16) to UTF-8 bytes before Base64 encoding
