@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Broken Link Detection** — Wikilinks pointing to non-existent assets are automatically highlighted in red; valid links appear in teal
 - **External URL Handling** — Clicking `http://` or `https://` links in the preview opens them in the system browser instead of navigating within the preview pane
 
+### Fixed
+
+- **Line Prefix Insertion** — Fixed toolbar actions (Heading, Bullet List, Numbered List, Blockquote) inserting prefix on wrong line when text wraps visually; now uses absolute offset with backward newline search for correct logical line identification
+
 ## [1.0.0] - 2026-03-11
 
 ### Added
