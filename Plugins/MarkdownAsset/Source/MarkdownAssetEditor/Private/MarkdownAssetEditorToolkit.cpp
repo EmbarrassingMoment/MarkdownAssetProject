@@ -138,25 +138,30 @@ static bool DoesAssetExistAtPath(const FString& ObjectPath)
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
 
-	const FSoftObjectPath SoftPath(ObjectPath);
-	if (AssetRegistry.GetAssetByObjectPath(SoftPath).IsValid())
+	// Strip a trailing ".ObjectName" to derive the package path; the registry indexes by package.
+	FString PackagePath = ObjectPath;
+	int32 DotIndex;
+	if (PackagePath.FindChar(TEXT('.'), DotIndex))
+	{
+		PackagePath.LeftInline(DotIndex);
+	}
+
+	TArray<FAssetData> PackageAssets;
+	AssetRegistry.GetAssetsByPackageName(FName(*PackagePath), PackageAssets);
+	if (PackageAssets.Num() > 0)
 	{
 		return true;
 	}
 
-	// Content Browser paths often omit the trailing ".AssetName"; try appending it.
-	int32 SlashIndex;
-	if (!ObjectPath.Contains(TEXT(".")) && ObjectPath.FindLastChar(TEXT('/'), SlashIndex))
+	// Secondary: legacy object-path query in case the caller supplied a non-package form.
+	if (AssetRegistry.GetAssetByObjectPath(FSoftObjectPath(ObjectPath)).IsValid())
 	{
-		const FString LeafName = ObjectPath.Mid(SlashIndex + 1);
-		const FString FullPath = FString::Printf(TEXT("%s.%s"), *ObjectPath, *LeafName);
-		if (AssetRegistry.GetAssetByObjectPath(FSoftObjectPath(FullPath)).IsValid())
-		{
-			return true;
-		}
+		return true;
 	}
 
-	return false;
+	// Last resort: does the package file exist on disk? Catches assets the registry has not
+	// yet indexed (e.g. newly added plugin content).
+	return FPackageName::DoesPackageExist(PackagePath);
 }
 
 /** Returns true if a native UClass or Blueprint class matching ClassName can be resolved. */
@@ -818,47 +823,80 @@ void FMarkdownAssetEditorToolkit::OpenLinkedUnrealAsset(const FString& ObjectPat
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
 
-	// Try the path as provided, then the common "/Game/Foo/Bar.Bar" form.
-	TArray<FString> CandidatePaths;
-	CandidatePaths.Add(ObjectPath);
+	// Derive the package path (strip any trailing ".ObjectName") and the full object path.
+	FString PackagePath = ObjectPath;
+	int32 DotIndex;
+	if (PackagePath.FindChar(TEXT('.'), DotIndex))
+	{
+		PackagePath.LeftInline(DotIndex);
+	}
 
 	int32 SlashIndex;
-	if (!ObjectPath.Contains(TEXT(".")) && ObjectPath.FindLastChar(TEXT('/'), SlashIndex))
+	FString LeafName;
+	if (PackagePath.FindLastChar(TEXT('/'), SlashIndex))
 	{
-		const FString LeafName = ObjectPath.Mid(SlashIndex + 1);
-		CandidatePaths.Add(FString::Printf(TEXT("%s.%s"), *ObjectPath, *LeafName));
+		LeafName = PackagePath.Mid(SlashIndex + 1);
+	}
+	const FString FullObjectPath = LeafName.IsEmpty() ? ObjectPath : FString::Printf(TEXT("%s.%s"), *PackagePath, *LeafName);
+	UE_LOG(LogMarkdownAssetEditor, Display, TEXT("[LinkDebug]   package='%s' full='%s'"), *PackagePath, *FullObjectPath);
+
+	UObject* LoadedAsset = nullptr;
+
+	// 1) Package-name query — most reliable for standard Content Browser paths.
+	TArray<FAssetData> PackageAssets;
+	AssetRegistry.GetAssetsByPackageName(FName(*PackagePath), PackageAssets);
+	UE_LOG(LogMarkdownAssetEditor, Display, TEXT("[LinkDebug]   GetAssetsByPackageName returned %d"), PackageAssets.Num());
+	if (PackageAssets.Num() > 0)
+	{
+		LoadedAsset = PackageAssets[0].GetAsset();
+		UE_LOG(LogMarkdownAssetEditor, Display, TEXT("[LinkDebug]   package[0].GetAsset -> %s"),
+			LoadedAsset ? *LoadedAsset->GetPathName() : TEXT("nullptr"));
 	}
 
-	for (const FString& Candidate : CandidatePaths)
+	// 2) SoftObjectPath query (legacy fallback) for both raw and dotted forms.
+	if (!LoadedAsset)
 	{
-		UE_LOG(LogMarkdownAssetEditor, Display, TEXT("[LinkDebug]   candidate='%s'"), *Candidate);
-		const FSoftObjectPath SoftPath(Candidate);
-		FAssetData AssetData = AssetRegistry.GetAssetByObjectPath(SoftPath);
-		UE_LOG(LogMarkdownAssetEditor, Display, TEXT("[LinkDebug]   AssetData.IsValid()=%d"), AssetData.IsValid() ? 1 : 0);
-		if (!AssetData.IsValid())
+		for (const FString& Candidate : { ObjectPath, FullObjectPath })
 		{
-			continue;
-		}
-
-		UObject* LoadedAsset = AssetData.GetAsset();
-		UE_LOG(LogMarkdownAssetEditor, Display, TEXT("[LinkDebug]   LoadedAsset=%s (class=%s)"),
-			LoadedAsset ? *LoadedAsset->GetPathName() : TEXT("nullptr"),
-			LoadedAsset ? *LoadedAsset->GetClass()->GetName() : TEXT("n/a"));
-
-		if (LoadedAsset)
-		{
-			UAssetEditorSubsystem* AssetEditorSubsystem = GEditor ? GEditor->GetEditorSubsystem<UAssetEditorSubsystem>() : nullptr;
-			UE_LOG(LogMarkdownAssetEditor, Display, TEXT("[LinkDebug]   AssetEditorSubsystem=%s"), AssetEditorSubsystem ? TEXT("valid") : TEXT("nullptr"));
-			if (AssetEditorSubsystem)
+			FAssetData AssetData = AssetRegistry.GetAssetByObjectPath(FSoftObjectPath(Candidate));
+			UE_LOG(LogMarkdownAssetEditor, Display, TEXT("[LinkDebug]   GetAssetByObjectPath('%s') valid=%d"),
+				*Candidate, AssetData.IsValid() ? 1 : 0);
+			if (AssetData.IsValid())
 			{
-				const bool bOpened = AssetEditorSubsystem->OpenEditorForAsset(LoadedAsset);
-				UE_LOG(LogMarkdownAssetEditor, Display, TEXT("[LinkDebug]   OpenEditorForAsset returned %d"), bOpened ? 1 : 0);
+				LoadedAsset = AssetData.GetAsset();
+				if (LoadedAsset) break;
 			}
-			return;
 		}
 	}
 
-	UE_LOG(LogMarkdownAssetEditor, Warning, TEXT("[LinkDebug] Asset link target not found: '%s'"), *ObjectPath);
+	// 3) Direct load as a last resort (forces on-disk packages to load even when
+	//    the registry has not indexed them yet).
+	if (!LoadedAsset)
+	{
+		LoadedAsset = StaticLoadObject(UObject::StaticClass(), nullptr, *FullObjectPath);
+		UE_LOG(LogMarkdownAssetEditor, Display, TEXT("[LinkDebug]   StaticLoadObject('%s') -> %s"),
+			*FullObjectPath, LoadedAsset ? *LoadedAsset->GetPathName() : TEXT("nullptr"));
+	}
+
+	if (!LoadedAsset)
+	{
+		UE_LOG(LogMarkdownAssetEditor, Warning, TEXT("[LinkDebug] Asset link target not found: '%s'"), *ObjectPath);
+		return;
+	}
+
+	// Blueprint assets need their generated class opened if the asset itself is a UBlueprint.
+	UE_LOG(LogMarkdownAssetEditor, Display, TEXT("[LinkDebug]   opening asset of class %s"), *LoadedAsset->GetClass()->GetName());
+
+	UAssetEditorSubsystem* AssetEditorSubsystem = GEditor ? GEditor->GetEditorSubsystem<UAssetEditorSubsystem>() : nullptr;
+	if (AssetEditorSubsystem)
+	{
+		const bool bOpened = AssetEditorSubsystem->OpenEditorForAsset(LoadedAsset);
+		UE_LOG(LogMarkdownAssetEditor, Display, TEXT("[LinkDebug]   OpenEditorForAsset returned %d"), bOpened ? 1 : 0);
+	}
+	else
+	{
+		UE_LOG(LogMarkdownAssetEditor, Warning, TEXT("[LinkDebug]   AssetEditorSubsystem unavailable"));
+	}
 }
 
 void FMarkdownAssetEditorToolkit::OpenLinkedClass(const FString& ClassName)
