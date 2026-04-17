@@ -5,6 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Asset & Class Links** — Standard Markdown links whose target begins with a UE package root (`/Game/`, `/Engine/`, `/Plugins/`, `/Script/`) are now opened in the corresponding asset editor from the HTML preview
+- **Class Link Scheme** — `[Label](class://ClassName)` resolves the target via UClass lookup; native C++ classes open in the IDE via `FSourceCodeNavigation::NavigateToClass`, Blueprint classes open in the Blueprint editor
+- **Broken Link Styling for New Schemes** — `ueasset://` and `class://` targets that cannot be resolved are highlighted in red in the preview, matching existing wikilink behavior
+
 ## [1.1.0] - 2026-04-04
 
 ### Added

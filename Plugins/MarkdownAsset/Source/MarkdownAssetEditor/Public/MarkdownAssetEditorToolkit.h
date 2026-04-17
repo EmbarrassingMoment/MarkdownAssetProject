@@ -146,6 +146,12 @@ private:
 	/** Opens a linked Markdown asset by name via the Asset Registry. */
 	void OpenLinkedMarkdownAsset(const FString& AssetName);
 
+	/** Opens an Unreal asset referenced by a package / object path (e.g. /Game/Path/To/Asset). */
+	void OpenLinkedUnrealAsset(const FString& ObjectPath);
+
+	/** Opens a C++ class in the IDE or a Blueprint class in its asset editor by class name. */
+	void OpenLinkedClass(const FString& ClassName);
+
 	/** Timer handle for debouncing preview updates after text changes. */
 	FTimerHandle PreviewUpdateTimerHandle;
 

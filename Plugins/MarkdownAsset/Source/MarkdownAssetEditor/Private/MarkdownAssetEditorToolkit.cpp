@@ -20,6 +20,10 @@
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "Subsystems/AssetEditorSubsystem.h"
 #include "Internationalization/Regex.h"
+#include "SourceCodeNavigation.h"
+#include "Engine/Blueprint.h"
+#include "UObject/UObjectGlobals.h"
+#include "UObject/SoftObjectPath.h"
 
 #define LOCTEXT_NAMESPACE "MarkdownAssetEditor"
 
@@ -82,33 +86,110 @@ static FString GenerateStyledHtml(const FString& ParsedHtml)
 		"del { color: #888; }\n"
 "a[href^=\"mdasset://\"] { color: #4ec9b0; text-decoration: none; border-bottom: 1px dashed #4ec9b0; cursor: pointer; }\n"
 "a[href^=\"mdasset://\"]:hover { color: #6fe0c8; border-bottom-style: solid; }\n"
+"a[href^=\"ueasset://\"] { color: #dcdcaa; text-decoration: none; border-bottom: 1px dashed #dcdcaa; cursor: pointer; }\n"
+"a[href^=\"ueasset://\"]:hover { color: #f1e9a6; border-bottom-style: solid; }\n"
+"a[href^=\"class://\"] { color: #c586c0; text-decoration: none; border-bottom: 1px dashed #c586c0; cursor: pointer; }\n"
+"a[href^=\"class://\"]:hover { color: #d7a7d2; border-bottom-style: solid; }\n"
 "a.md-broken-link { color: #f44747; border-bottom-color: #f44747; }\n"
 "a.md-broken-link:hover { color: #ff6b6b; }\n"
 		"</style></head><body>\n%s\n</body></html>"
 	), *ParsedHtml);
 }
 
-/**
- * Checks each mdasset:// link against the AssetRegistry and adds the
- * "md-broken-link" CSS class to links whose target asset does not exist.
- */
-static FString MarkBrokenWikilinks(const FString& Html)
+/** Returns true if an Unreal asset exists at the given object path. */
+static bool DoesAssetExistAtPath(const FString& ObjectPath)
 {
-	// Collect existing MarkdownAsset names
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+
+	const FSoftObjectPath SoftPath(ObjectPath);
+	if (AssetRegistry.GetAssetByObjectPath(SoftPath).IsValid())
+	{
+		return true;
+	}
+
+	// Content Browser paths often omit the trailing ".AssetName"; try appending it.
+	int32 SlashIndex;
+	if (!ObjectPath.Contains(TEXT(".")) && ObjectPath.FindLastChar(TEXT('/'), SlashIndex))
+	{
+		const FString LeafName = ObjectPath.Mid(SlashIndex + 1);
+		const FString FullPath = FString::Printf(TEXT("%s.%s"), *ObjectPath, *LeafName);
+		if (AssetRegistry.GetAssetByObjectPath(FSoftObjectPath(FullPath)).IsValid())
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/** Returns true if a native UClass or Blueprint class matching ClassName can be resolved. */
+static bool DoesClassExist(const FString& ClassName)
+{
+	if (ClassName.IsEmpty())
+	{
+		return false;
+	}
+
+	// Native class lookup (tries exact name, then common A/U prefixes).
+	TArray<FString> Candidates = { ClassName };
+	if (!ClassName.StartsWith(TEXT("A")) && !ClassName.StartsWith(TEXT("U")))
+	{
+		Candidates.Add(FString::Printf(TEXT("A%s"), *ClassName));
+		Candidates.Add(FString::Printf(TEXT("U%s"), *ClassName));
+	}
+	for (const FString& Candidate : Candidates)
+	{
+		if (FindFirstObject<UClass>(*Candidate, EFindFirstObjectOptions::NativeFirst) != nullptr)
+		{
+			return true;
+		}
+	}
+
+	// Blueprint fallback via Asset Registry (accepts both "BP_Foo" and "BP_Foo_C").
+	FString BlueprintAssetName = ClassName;
+	if (BlueprintAssetName.EndsWith(TEXT("_C")))
+	{
+		BlueprintAssetName.LeftChopInline(2);
+	}
+
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+
+	TArray<FAssetData> BlueprintAssets;
+	AssetRegistry.GetAssetsByClass(UBlueprint::StaticClass()->GetClassPathName(), BlueprintAssets);
+	for (const FAssetData& Asset : BlueprintAssets)
+	{
+		if (Asset.AssetName.ToString() == BlueprintAssetName)
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Walks every <a href="..."> tag and adds the "md-broken-link" CSS class when
+ * the target of an mdasset://, ueasset://, or class:// scheme cannot be resolved.
+ * External URLs and other schemes are left untouched.
+ */
+static FString MarkBrokenLinks(const FString& Html)
+{
+	// Cache MarkdownAsset names once for mdasset:// lookups.
 	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
 	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
 
 	TArray<FAssetData> AllMarkdownAssets;
 	AssetRegistry.GetAssetsByClass(UMarkdownAsset::StaticClass()->GetClassPathName(), AllMarkdownAssets);
 
-	TSet<FString> ExistingNames;
+	TSet<FString> MarkdownAssetNames;
 	for (const FAssetData& Asset : AllMarkdownAssets)
 	{
-		ExistingNames.Add(Asset.AssetName.ToString());
+		MarkdownAssetNames.Add(Asset.AssetName.ToString());
 	}
 
-	// Find mdasset:// links and add md-broken-link class if target not found
-	const FRegexPattern LinkPattern(TEXT("<a href=\"mdasset://([^\"]*)\""));
+	const FRegexPattern LinkPattern(TEXT("<a href=\"(mdasset|ueasset|class)://([^\"]*)\""));
 	FRegexMatcher Matcher(LinkPattern, Html);
 
 	FString Result;
@@ -118,33 +199,31 @@ static FString MarkBrokenWikilinks(const FString& Html)
 	{
 		Result += Html.Mid(LastPos, Matcher.GetMatchBeginning() - LastPos);
 
-		FString EncodedTarget = Matcher.GetCaptureGroup(1);
+		const FString Scheme = Matcher.GetCaptureGroup(1);
+		const FString EncodedTarget = Matcher.GetCaptureGroup(2);
+		const FString DecodedTarget = PercentDecode(EncodedTarget);
 
-		// Percent-decode to get the original asset name
-		TArray<uint8> Bytes;
-		for (int32 i = 0; i < EncodedTarget.Len(); ++i)
+		bool bTargetExists = false;
+		if (Scheme == TEXT("mdasset"))
 		{
-			if (EncodedTarget[i] == TEXT('%') && i + 2 < EncodedTarget.Len())
-			{
-				FString HexStr = EncodedTarget.Mid(i + 1, 2);
-				Bytes.Add(static_cast<uint8>(FCString::Strtoi(*HexStr, nullptr, 16)));
-				i += 2;
-			}
-			else
-			{
-				Bytes.Add(static_cast<uint8>(EncodedTarget[i] & 0xFF));
-			}
+			bTargetExists = MarkdownAssetNames.Contains(DecodedTarget);
 		}
-		FUTF8ToTCHAR Converter(reinterpret_cast<const ANSICHAR*>(Bytes.GetData()), Bytes.Num());
-		FString AssetName(Converter.Length(), Converter.Get());
+		else if (Scheme == TEXT("ueasset"))
+		{
+			bTargetExists = DoesAssetExistAtPath(DecodedTarget);
+		}
+		else // class
+		{
+			bTargetExists = DoesClassExist(DecodedTarget);
+		}
 
-		if (ExistingNames.Contains(AssetName))
+		if (bTargetExists)
 		{
 			Result += Html.Mid(Matcher.GetMatchBeginning(), Matcher.GetMatchEnding() - Matcher.GetMatchBeginning());
 		}
 		else
 		{
-			Result += FString::Printf(TEXT("<a class=\"md-broken-link\" href=\"mdasset://%s\""), *EncodedTarget);
+			Result += FString::Printf(TEXT("<a class=\"md-broken-link\" href=\"%s://%s\""), *Scheme, *EncodedTarget);
 		}
 
 		LastPos = Matcher.GetMatchEnding();
@@ -300,7 +379,7 @@ void FMarkdownAssetEditorToolkit::UpdatePreview()
 	if (MarkdownAsset && WebBrowserWidget.IsValid())
 	{
 		FString ParsedHtml = MarkdownAsset->GetParsedHTML();
-		ParsedHtml = MarkBrokenWikilinks(ParsedHtml);
+		ParsedHtml = MarkBrokenLinks(ParsedHtml);
 		FString StyledHtml = GenerateStyledHtml(ParsedHtml);
 
 		// Explicitly convert FString (UTF-16) to UTF-8 bytes before Base64 encoding
@@ -611,12 +690,29 @@ bool FMarkdownAssetEditorToolkit::HandleBeforeNavigation(const FString& Url, con
 	}
 
 	// Handle mdasset:// scheme for wikilinks
-	static const FString Scheme = TEXT("mdasset://");
-	if (Url.StartsWith(Scheme))
+	static const FString MdAssetScheme = TEXT("mdasset://");
+	if (Url.StartsWith(MdAssetScheme))
 	{
-		FString AssetName = Url.Mid(Scheme.Len());
-		AssetName = PercentDecode(AssetName);
+		FString AssetName = PercentDecode(Url.Mid(MdAssetScheme.Len()));
 		OpenLinkedMarkdownAsset(AssetName);
+		return true;
+	}
+
+	// Handle ueasset:// scheme for Content Browser asset / Blueprint object paths
+	static const FString UEAssetScheme = TEXT("ueasset://");
+	if (Url.StartsWith(UEAssetScheme))
+	{
+		FString ObjectPath = PercentDecode(Url.Mid(UEAssetScheme.Len()));
+		OpenLinkedUnrealAsset(ObjectPath);
+		return true;
+	}
+
+	// Handle class:// scheme for C++ or Blueprint class references
+	static const FString ClassScheme = TEXT("class://");
+	if (Url.StartsWith(ClassScheme))
+	{
+		FString ClassName = PercentDecode(Url.Mid(ClassScheme.Len()));
+		OpenLinkedClass(ClassName);
 		return true;
 	}
 
@@ -655,6 +751,107 @@ void FMarkdownAssetEditorToolkit::OpenLinkedMarkdownAsset(const FString& AssetNa
 	{
 		UE_LOG(LogMarkdownAssetEditor, Warning, TEXT("Wikilink target not found: '%s'"), *AssetName);
 	}
+}
+
+void FMarkdownAssetEditorToolkit::OpenLinkedUnrealAsset(const FString& ObjectPath)
+{
+	if (ObjectPath.IsEmpty())
+	{
+		return;
+	}
+
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+
+	// Try the path as provided, then the common "/Game/Foo/Bar.Bar" form.
+	TArray<FString> CandidatePaths;
+	CandidatePaths.Add(ObjectPath);
+
+	int32 SlashIndex;
+	if (!ObjectPath.Contains(TEXT(".")) && ObjectPath.FindLastChar(TEXT('/'), SlashIndex))
+	{
+		const FString LeafName = ObjectPath.Mid(SlashIndex + 1);
+		CandidatePaths.Add(FString::Printf(TEXT("%s.%s"), *ObjectPath, *LeafName));
+	}
+
+	for (const FString& Candidate : CandidatePaths)
+	{
+		const FSoftObjectPath SoftPath(Candidate);
+		FAssetData AssetData = AssetRegistry.GetAssetByObjectPath(SoftPath);
+		if (!AssetData.IsValid())
+		{
+			continue;
+		}
+
+		if (UObject* LoadedAsset = AssetData.GetAsset())
+		{
+			GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OpenEditorForAsset(LoadedAsset);
+			return;
+		}
+	}
+
+	UE_LOG(LogMarkdownAssetEditor, Warning, TEXT("Asset link target not found: '%s'"), *ObjectPath);
+}
+
+void FMarkdownAssetEditorToolkit::OpenLinkedClass(const FString& ClassName)
+{
+	if (ClassName.IsEmpty())
+	{
+		return;
+	}
+
+	// Native UClass lookup; try common UE prefixes if the bare name misses.
+	TArray<FString> NativeCandidates = { ClassName };
+	if (!ClassName.StartsWith(TEXT("A")) && !ClassName.StartsWith(TEXT("U")))
+	{
+		NativeCandidates.Add(FString::Printf(TEXT("A%s"), *ClassName));
+		NativeCandidates.Add(FString::Printf(TEXT("U%s"), *ClassName));
+	}
+
+	for (const FString& Candidate : NativeCandidates)
+	{
+		if (UClass* FoundClass = FindFirstObject<UClass>(*Candidate, EFindFirstObjectOptions::NativeFirst))
+		{
+			if (FoundClass->HasAnyClassFlags(CLASS_Native))
+			{
+				if (!FSourceCodeNavigation::NavigateToClass(FoundClass))
+				{
+					UE_LOG(LogMarkdownAssetEditor, Warning, TEXT("Failed to open source for native class '%s'"), *FoundClass->GetName());
+				}
+				return;
+			}
+		}
+	}
+
+	// Blueprint class fallback: accept both "BP_Foo" and "BP_Foo_C".
+	FString BlueprintAssetName = ClassName;
+	if (BlueprintAssetName.EndsWith(TEXT("_C")))
+	{
+		BlueprintAssetName.LeftChopInline(2);
+	}
+
+	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
+	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+
+	TArray<FAssetData> BlueprintAssets;
+	AssetRegistry.GetAssetsByClass(UBlueprint::StaticClass()->GetClassPathName(), BlueprintAssets);
+
+	const FAssetData* MatchedBlueprint = BlueprintAssets.FindByPredicate(
+		[&BlueprintAssetName](const FAssetData& Asset)
+		{
+			return Asset.AssetName.ToString() == BlueprintAssetName;
+		});
+
+	if (MatchedBlueprint)
+	{
+		if (UObject* LoadedBlueprint = MatchedBlueprint->GetAsset())
+		{
+			GEditor->GetEditorSubsystem<UAssetEditorSubsystem>()->OpenEditorForAsset(LoadedBlueprint);
+			return;
+		}
+	}
+
+	UE_LOG(LogMarkdownAssetEditor, Warning, TEXT("Class link target not found: '%s'"), *ClassName);
 }
 
 #undef LOCTEXT_NAMESPACE
