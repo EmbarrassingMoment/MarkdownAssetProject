@@ -96,6 +96,42 @@ static FString GenerateStyledHtml(const FString& ParsedHtml)
 	), *ParsedHtml);
 }
 
+/**
+ * Builds reflection-name candidates to try when resolving a user-supplied class name.
+ * UHT strips the leading A/U/I prefix from native class names, so "class://AActor"
+ * must be matched against the UClass named "Actor". Conversely, a bare "Actor" may
+ * need to be resolved as "AActor" for a hypothetical class in some projects.
+ */
+static TArray<FString> BuildClassNameCandidates(const FString& ClassName)
+{
+	TArray<FString> Candidates;
+	if (ClassName.IsEmpty())
+	{
+		return Candidates;
+	}
+
+	Candidates.Add(ClassName);
+
+	// Strip a single-letter A/U/I prefix when followed by an uppercase letter.
+	if (ClassName.Len() > 1 && FChar::IsUpper(ClassName[1]))
+	{
+		const TCHAR First = ClassName[0];
+		if (First == TEXT('A') || First == TEXT('U') || First == TEXT('I'))
+		{
+			Candidates.AddUnique(ClassName.Mid(1));
+		}
+	}
+
+	// Add A/U-prefixed variants for bare names.
+	if (FChar::IsUpper(ClassName[0]))
+	{
+		Candidates.AddUnique(FString::Printf(TEXT("A%s"), *ClassName));
+		Candidates.AddUnique(FString::Printf(TEXT("U%s"), *ClassName));
+	}
+
+	return Candidates;
+}
+
 /** Returns true if an Unreal asset exists at the given object path. */
 static bool DoesAssetExistAtPath(const FString& ObjectPath)
 {
@@ -131,14 +167,8 @@ static bool DoesClassExist(const FString& ClassName)
 		return false;
 	}
 
-	// Native class lookup (tries exact name, then common A/U prefixes).
-	TArray<FString> Candidates = { ClassName };
-	if (!ClassName.StartsWith(TEXT("A")) && !ClassName.StartsWith(TEXT("U")))
-	{
-		Candidates.Add(FString::Printf(TEXT("A%s"), *ClassName));
-		Candidates.Add(FString::Printf(TEXT("U%s"), *ClassName));
-	}
-	for (const FString& Candidate : Candidates)
+	// Native class lookup against reflection names (UHT strips A/U/I prefixes).
+	for (const FString& Candidate : BuildClassNameCandidates(ClassName))
 	{
 		if (FindFirstObject<UClass>(*Candidate, EFindFirstObjectOptions::NativeFirst) != nullptr)
 		{
@@ -800,15 +830,8 @@ void FMarkdownAssetEditorToolkit::OpenLinkedClass(const FString& ClassName)
 		return;
 	}
 
-	// Native UClass lookup; try common UE prefixes if the bare name misses.
-	TArray<FString> NativeCandidates = { ClassName };
-	if (!ClassName.StartsWith(TEXT("A")) && !ClassName.StartsWith(TEXT("U")))
-	{
-		NativeCandidates.Add(FString::Printf(TEXT("A%s"), *ClassName));
-		NativeCandidates.Add(FString::Printf(TEXT("U%s"), *ClassName));
-	}
-
-	for (const FString& Candidate : NativeCandidates)
+	// Native UClass lookup against reflection names (UHT strips A/U/I prefixes).
+	for (const FString& Candidate : BuildClassNameCandidates(ClassName))
 	{
 		if (UClass* FoundClass = FindFirstObject<UClass>(*Candidate, EFindFirstObjectOptions::NativeFirst))
 		{
