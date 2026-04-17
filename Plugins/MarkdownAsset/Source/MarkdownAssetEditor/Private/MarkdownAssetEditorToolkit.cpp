@@ -814,6 +814,17 @@ void FMarkdownAssetEditorToolkit::OpenLinkedClass(const FString& ClassName)
 		{
 			if (FoundClass->HasAnyClassFlags(CLASS_Native))
 			{
+				// Prefer the implementation file (.cpp); fall back to the header when no
+				// .cpp is available (header-only classes, interfaces, etc.).
+				FString SourcePath;
+				if (FSourceCodeNavigation::FindClassSourcePath(FoundClass, SourcePath) && !SourcePath.IsEmpty())
+				{
+					if (FSourceCodeNavigation::OpenSourceFile(SourcePath))
+					{
+						return;
+					}
+				}
+
 				if (!FSourceCodeNavigation::NavigateToClass(FoundClass))
 				{
 					UE_LOG(LogMarkdownAssetEditor, Warning, TEXT("Failed to open source for native class '%s'"), *FoundClass->GetName());
