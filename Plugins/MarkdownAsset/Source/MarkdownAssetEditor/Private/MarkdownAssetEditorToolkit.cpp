@@ -24,6 +24,9 @@
 #include "Engine/Blueprint.h"
 #include "UObject/UObjectGlobals.h"
 #include "UObject/SoftObjectPath.h"
+#include "UObject/Package.h"
+#include "UObject/MetaData.h"
+#include "Misc/PackageName.h"
 
 #define LOCTEXT_NAMESPACE "MarkdownAssetEditor"
 
@@ -853,7 +856,9 @@ void FMarkdownAssetEditorToolkit::OpenLinkedUnrealAsset(const FString& ObjectPat
 			LoadedAsset ? *LoadedAsset->GetPathName() : TEXT("nullptr"));
 	}
 
-	// 2) SoftObjectPath query (legacy fallback) for both raw and dotted forms.
+	// 2) AssetRegistry lookup — use the canonical path stored in FAssetData and load
+	//    it via FSoftObjectPath::TryLoad (GetAsset() was observed to return nullptr
+	//    in some UE5 builds even when IsValid() reports true).
 	if (!LoadedAsset)
 	{
 		for (const FString& Candidate : { ObjectPath, FullObjectPath })
@@ -861,21 +866,56 @@ void FMarkdownAssetEditorToolkit::OpenLinkedUnrealAsset(const FString& ObjectPat
 			FAssetData AssetData = AssetRegistry.GetAssetByObjectPath(FSoftObjectPath(Candidate));
 			UE_LOG(LogMarkdownAssetEditor, Display, TEXT("[LinkDebug]   GetAssetByObjectPath('%s') valid=%d"),
 				*Candidate, AssetData.IsValid() ? 1 : 0);
-			if (AssetData.IsValid())
+			if (!AssetData.IsValid())
 			{
-				LoadedAsset = AssetData.GetAsset();
-				if (LoadedAsset) break;
+				continue;
 			}
+
+			const FSoftObjectPath Resolved = AssetData.GetSoftObjectPath();
+			UE_LOG(LogMarkdownAssetEditor, Display,
+				TEXT("[LinkDebug]   AssetData: AssetName='%s' PackageName='%s' ClassPath='%s' Resolved='%s'"),
+				*AssetData.AssetName.ToString(),
+				*AssetData.PackageName.ToString(),
+				*AssetData.AssetClassPath.ToString(),
+				*Resolved.ToString());
+
+			LoadedAsset = Resolved.TryLoad();
+			UE_LOG(LogMarkdownAssetEditor, Display, TEXT("[LinkDebug]   Resolved.TryLoad() -> %s"),
+				LoadedAsset ? *LoadedAsset->GetPathName() : TEXT("nullptr"));
+			if (LoadedAsset) break;
 		}
 	}
 
-	// 3) Direct load as a last resort (forces on-disk packages to load even when
-	//    the registry has not indexed them yet).
+	// 3) StaticLoadObject — forces on-disk packages to load even when the
+	//    registry has not indexed them yet.
 	if (!LoadedAsset)
 	{
 		LoadedAsset = StaticLoadObject(UObject::StaticClass(), nullptr, *FullObjectPath);
 		UE_LOG(LogMarkdownAssetEditor, Display, TEXT("[LinkDebug]   StaticLoadObject('%s') -> %s"),
 			*FullObjectPath, LoadedAsset ? *LoadedAsset->GetPathName() : TEXT("nullptr"));
+	}
+
+	// 4) LoadPackage as a final fallback — finds the first real asset in the
+	//    package even when the object name inside differs from the package leaf.
+	if (!LoadedAsset && FPackageName::DoesPackageExist(PackagePath))
+	{
+		UPackage* LoadedPackage = LoadPackage(nullptr, *PackagePath, LOAD_None);
+		UE_LOG(LogMarkdownAssetEditor, Display, TEXT("[LinkDebug]   LoadPackage('%s') -> %s"),
+			*PackagePath, LoadedPackage ? *LoadedPackage->GetName() : TEXT("nullptr"));
+		if (LoadedPackage)
+		{
+			ForEachObjectWithPackage(LoadedPackage, [&LoadedAsset](UObject* Obj)
+			{
+				if (Obj && Obj->IsAsset() && !Obj->IsA<UMetaData>())
+				{
+					LoadedAsset = Obj;
+					return false;
+				}
+				return true;
+			}, false);
+			UE_LOG(LogMarkdownAssetEditor, Display, TEXT("[LinkDebug]   ForEachObjectWithPackage -> %s"),
+				LoadedAsset ? *LoadedAsset->GetPathName() : TEXT("nullptr"));
+		}
 	}
 
 	if (!LoadedAsset)
