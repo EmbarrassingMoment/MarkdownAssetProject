@@ -82,6 +82,21 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 - **Reimport**: Right-click an imported asset and select **Reimport** to reload from the original source file.
 - **Export**: Right-click a Markdown asset and select **Asset Actions > Export** to save it as a `.md` file.
 
+### Linking Syntax
+
+Markdown assets can cross-link to other Markdown notes, Content Browser assets, Blueprints, and C++ classes. Clicking any of the links below in the live preview jumps to the target:
+
+| Syntax | Target | Opens |
+|--------|--------|-------|
+| `[[NoteName]]` | Another `UMarkdownAsset` | Markdown editor tab |
+| `[Label](/Game/Path/To/Asset)` | Any Content Browser asset | Asset editor |
+| `[Label](/Engine/BasicShapes/Cube)` | Engine-bundled asset | Asset editor |
+| `[Label](class://ClassName)` | Native C++ class | IDE source file (`.cpp` preferred, `.h` fallback) |
+| `[Label](class://BP_MyActor)` | Blueprint class | Blueprint editor |
+| `[Label](https://...)` | External URL | System browser |
+
+Path roots recognised as Unreal asset links: `/Game/`, `/Engine/`, `/Plugins/`, `/Script/`. Class names are matched against UHT reflection names, so both prefixed forms (`AActor`) and stripped forms (`Actor`) resolve correctly. Targets that cannot be resolved are rendered in red.
+
 ### Blueprint Nodes
 
 `UMarkdownAsset` exposes the following Blueprint-callable functions:

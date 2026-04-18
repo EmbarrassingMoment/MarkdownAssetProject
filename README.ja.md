@@ -82,6 +82,21 @@
 - **リインポート**: インポートしたアセットを右クリックし、**Reimport** を選択すると元のソースファイルから再読み込みできます。
 - **エクスポート**: Markdownアセットを右クリックし、**Asset Actions > Export** を選択すると `.md` ファイルとして保存できます。
 
+### リンク構文
+
+Markdownアセットは他のMarkdownノート、Content Browserアセット、Blueprint、C++クラスへクロスリンクできます。ライブプレビューでリンクをクリックすると対象が開きます:
+
+| 構文 | 対象 | 開かれるもの |
+|------|------|-------------|
+| `[[ノート名]]` | 他の `UMarkdownAsset` | Markdownエディタタブ |
+| `[ラベル](/Game/Path/To/Asset)` | Content Browserの任意のアセット | アセットエディタ |
+| `[ラベル](/Engine/BasicShapes/Cube)` | Engine同梱アセット | アセットエディタ |
+| `[ラベル](class://クラス名)` | ネイティブC++クラス | IDEのソースファイル（`.cpp` 優先、`.h` フォールバック） |
+| `[ラベル](class://BP_MyActor)` | Blueprintクラス | Blueprintエディタ |
+| `[ラベル](https://...)` | 外部URL | システムブラウザ |
+
+Unrealアセットリンクとして認識されるパスルート: `/Game/`, `/Engine/`, `/Plugins/`, `/Script/`。クラス名はUHTのリフレクション名と照合されるため、プレフィックス付き (`AActor`) と除去済み (`Actor`) の両形式が正しく解決されます。解決できない対象は赤色で表示されます。
+
 ### Blueprint ノード
 
 `UMarkdownAsset` は以下の Blueprint から呼び出し可能な関数を公開しています:
