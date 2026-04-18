@@ -21,6 +21,7 @@
 - **インポート / エクスポート** — `.md` / `.markdown` ファイルをコンテンツブラウザにドラッグ＆ドロップしてインポート、ソースファイルからのリインポート、および `.md` ファイルへのエクスポートに対応しています。
 - **GitHub Flavored Markdown** — `MD_DIALECT_GITHUB` フラグにより、テーブル、タスクリスト、取り消し線などの GFM 拡張構文をサポートしました。
 - **Wikilink** — `[[アセット名]]` と記述するだけでアセット間リンクを作成できます。プレビュー内のリンクをクリックすると、対象のMarkdownアセットが新しいタブで開きます。存在しないアセットへのリンクは赤色で表示されます。
+- **アセット・クラスリンク** — 標準Markdown構文 `[ラベル](/Game/Path/To/Asset)` でContent Browserのアセット（Blueprintを含む）、`[ラベル](class://クラス名)` でC++またはBlueprintクラスへのリンクを記述できます。クリックすると対応するアセットエディタが開き、C++クラスの場合はIDEでソースファイルが開きます。解決できないリンクは赤色で表示されます。
 - **Blueprint サポート** — Blueprint から `RawMarkdownText` の読み書きと `GetParsedHTML()`、`GetRawMarkdownText()`、`GetPlainText()` の呼び出しが可能です。
 - **ツールバーとキーボードショートカット** — 一般的なMarkdown操作のためのキーボードショートカットを備えた組み込みのフォーマットツールバーを用意しています。
 - **元に戻す / やり直し** — Unreal Editorのトランザクションシステムと統合された完全なUndo/Redoサポート（Ctrl+Z / Ctrl+Y）
@@ -80,6 +81,21 @@
 - **インポート**: `.md` または `.markdown` ファイルをコンテンツブラウザにドラッグするとMarkdownアセットが作成されます。
 - **リインポート**: インポートしたアセットを右クリックし、**Reimport** を選択すると元のソースファイルから再読み込みできます。
 - **エクスポート**: Markdownアセットを右クリックし、**Asset Actions > Export** を選択すると `.md` ファイルとして保存できます。
+
+### リンク構文
+
+Markdownアセットは他のMarkdownノート、Content Browserアセット、Blueprint、C++クラスへクロスリンクできます。ライブプレビューでリンクをクリックすると対象が開きます:
+
+| 構文 | 対象 | 開かれるもの |
+|------|------|-------------|
+| `[[ノート名]]` | 他の `UMarkdownAsset` | Markdownエディタタブ |
+| `[ラベル](/Game/Path/To/Asset)` | Content Browserの任意のアセット | アセットエディタ |
+| `[ラベル](/Engine/BasicShapes/Cube)` | Engine同梱アセット | アセットエディタ |
+| `[ラベル](class://クラス名)` | ネイティブC++クラス | IDEのソースファイル（`.cpp` 優先、`.h` フォールバック） |
+| `[ラベル](class://BP_MyActor)` | Blueprintクラス | Blueprintエディタ |
+| `[ラベル](https://...)` | 外部URL | システムブラウザ |
+
+Unrealアセットリンクとして認識されるパスルート: `/Game/`, `/Engine/`, `/Plugins/`, `/Script/`。クラス名はUHTのリフレクション名と照合されるため、プレフィックス付き (`AActor`) と除去済み (`Actor`) の両形式が正しく解決されます。解決できない対象は赤色で表示されます。
 
 ### Blueprint ノード
 

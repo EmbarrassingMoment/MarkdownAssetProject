@@ -22,6 +22,7 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 - **Import / Export** — Drag-and-drop `.md` / `.markdown` files into the Content Browser to import, reimport from source files, or export assets back to `.md`
 - **GitHub Flavored Markdown** — Supports GFM extensions such as tables, task lists, and strikethrough via the `MD_DIALECT_GITHUB` flag
 - **Wikilinks** — Write `[[AssetName]]` to create inter-asset links; clicking a wikilink in the preview opens the target Markdown asset in a new editor tab. Broken links (pointing to non-existent assets) are highlighted in red
+- **Asset & Class Links** — Use standard Markdown syntax `[Label](/Game/Path/To/Asset)` to link to any Content Browser asset (including Blueprints), and `[Label](class://ClassName)` to link to a C++ or Blueprint class. Clicking opens the target in its asset editor or jumps to the C++ source in your IDE; unresolved targets are highlighted in red
 - **Blueprint Support** — Read/write `RawMarkdownText` and call `GetParsedHTML()`, `GetRawMarkdownText()`, and `GetPlainText()` from Blueprints
 - **Toolbar & Keyboard Shortcuts** — Built-in formatting toolbar with keyboard shortcuts for common Markdown operations
 - **Undo / Redo** — Full undo/redo support integrated with the Unreal Editor transaction system (Ctrl+Z / Ctrl+Y)
@@ -80,6 +81,21 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 - **Import**: Drag a `.md` or `.markdown` file into the Content Browser to create a Markdown asset.
 - **Reimport**: Right-click an imported asset and select **Reimport** to reload from the original source file.
 - **Export**: Right-click a Markdown asset and select **Asset Actions > Export** to save it as a `.md` file.
+
+### Linking Syntax
+
+Markdown assets can cross-link to other Markdown notes, Content Browser assets, Blueprints, and C++ classes. Clicking any of the links below in the live preview jumps to the target:
+
+| Syntax | Target | Opens |
+|--------|--------|-------|
+| `[[NoteName]]` | Another `UMarkdownAsset` | Markdown editor tab |
+| `[Label](/Game/Path/To/Asset)` | Any Content Browser asset | Asset editor |
+| `[Label](/Engine/BasicShapes/Cube)` | Engine-bundled asset | Asset editor |
+| `[Label](class://ClassName)` | Native C++ class | IDE source file (`.cpp` preferred, `.h` fallback) |
+| `[Label](class://BP_MyActor)` | Blueprint class | Blueprint editor |
+| `[Label](https://...)` | External URL | System browser |
+
+Path roots recognised as Unreal asset links: `/Game/`, `/Engine/`, `/Plugins/`, `/Script/`. Class names are matched against UHT reflection names, so both prefixed forms (`AActor`) and stripped forms (`Actor`) resolve correctly. Targets that cannot be resolved are rendered in red.
 
 ### Blueprint Nodes
 
