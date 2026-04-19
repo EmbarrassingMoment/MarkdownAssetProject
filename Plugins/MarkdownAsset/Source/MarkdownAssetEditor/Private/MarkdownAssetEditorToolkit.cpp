@@ -725,8 +725,8 @@ TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabA
 
 bool FMarkdownAssetEditorToolkit::HandleBeforeNavigation(const FString& Url, const FWebNavigationRequest& Request)
 {
-	// Allow data: URLs for preview loading
-	if (Url.StartsWith(TEXT("data:")))
+	// Allow data: URLs for preview loading, and about:blank used by CEF during init.
+	if (Url.StartsWith(TEXT("data:")) || Url.StartsWith(TEXT("about:")))
 	{
 		return false;
 	}
@@ -765,7 +765,10 @@ bool FMarkdownAssetEditorToolkit::HandleBeforeNavigation(const FString& Url, con
 		return true;
 	}
 
-	return false;
+	// Default-deny: block unknown schemes (javascript:, file:, vbscript:, etc.)
+	// to prevent script execution or local-file access from untrusted Markdown.
+	UE_LOG(LogMarkdownAssetEditor, Warning, TEXT("Blocked navigation to unsupported URL: '%s'"), *Url);
+	return true;
 }
 
 void FMarkdownAssetEditorToolkit::OpenLinkedMarkdownAsset(const FString& AssetName)
