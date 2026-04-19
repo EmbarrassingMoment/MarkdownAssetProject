@@ -30,6 +30,7 @@
 #include "UObject/MetaData.h"
 #endif
 #include "Misc/PackageName.h"
+#include "Misc/MessageDialog.h"
 
 #define LOCTEXT_NAMESPACE "MarkdownAssetEditor"
 
@@ -76,6 +77,8 @@ static FString GenerateStyledHtml(const FString& ParsedHtml)
 		"<!DOCTYPE html>\n"
 		"<html><head>\n"
 		"<meta charset=\"utf-8\">\n"
+		"<meta http-equiv=\"Content-Security-Policy\""
+		" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src data:;\">\n"
 		"<style>\n"
 		"body { font-family: 'Segoe UI', 'Meiryo', 'Yu Gothic', sans-serif; background-color: #1e1e1e; color: #cccccc; padding: 20px; }\n"
 		"h1, h2, h3, h4, h5, h6 { color: #ffffff; border-bottom: 1px solid #444; padding-bottom: 5px; }\n"
@@ -725,8 +728,8 @@ TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabA
 
 bool FMarkdownAssetEditorToolkit::HandleBeforeNavigation(const FString& Url, const FWebNavigationRequest& Request)
 {
-	// Allow data: URLs for preview loading
-	if (Url.StartsWith(TEXT("data:")))
+	// Allow data: URLs for preview loading, and about:blank used by CEF during init.
+	if (Url.StartsWith(TEXT("data:")) || Url.StartsWith(TEXT("about:")))
 	{
 		return false;
 	}
@@ -758,14 +761,31 @@ bool FMarkdownAssetEditorToolkit::HandleBeforeNavigation(const FString& Url, con
 		return true;
 	}
 
-	// Open external URLs in the system browser
+	// Open external URLs in the system browser after user confirmation.
+	// The preview has no address bar, so we always prompt with the full URL
+	// to let the user inspect it before launching (phishing mitigation).
 	if (Url.StartsWith(TEXT("http://")) || Url.StartsWith(TEXT("https://")))
 	{
-		FPlatformProcess::LaunchURL(*Url, nullptr, nullptr);
+		const FText Prompt = LOCTEXT("ConfirmExternalUrlMessage", "Open this URL in your default browser?");
+		const FText Message = FText::FromString(
+			FString::Printf(TEXT("%s\n\n%s"), *Prompt.ToString(), *Url)
+		);
+		const EAppReturnType::Type Response = FMessageDialog::Open(
+			EAppMsgType::YesNo,
+			Message,
+			LOCTEXT("ConfirmExternalUrlTitle", "Open External URL")
+		);
+		if (Response == EAppReturnType::Yes)
+		{
+			FPlatformProcess::LaunchURL(*Url, nullptr, nullptr);
+		}
 		return true;
 	}
 
-	return false;
+	// Default-deny: block unknown schemes (javascript:, file:, vbscript:, etc.)
+	// to prevent script execution or local-file access from untrusted Markdown.
+	UE_LOG(LogMarkdownAssetEditor, Warning, TEXT("Blocked navigation to unsupported URL: '%s'"), *Url);
+	return true;
 }
 
 void FMarkdownAssetEditorToolkit::OpenLinkedMarkdownAsset(const FString& AssetName)

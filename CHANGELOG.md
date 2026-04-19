@@ -15,6 +15,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Class Link Scheme** — `[Label](class://ClassName)` resolves the target via UClass lookup; native C++ classes open in the IDE via `FSourceCodeNavigation` (preferring the `.cpp` file, falling back to the header), Blueprint classes open in the Blueprint editor
 - **Broken Link Styling for New Schemes** — `ueasset://` and `class://` targets that cannot be resolved are highlighted in red in the preview, matching existing wikilink behavior
 
+### Security
+
+- **URL Scheme Allowlist** — The preview's `OnBeforeNavigation` handler now default-denies any scheme that is not explicitly supported (`data:`, `about:`, `mdasset://`, `ueasset://`, `class://`, `http(s)://`); unknown schemes such as `javascript:` and `file:` are blocked to prevent script execution or local file access from untrusted Markdown content
+- **Content Security Policy** — Preview HTML now includes a `Content-Security-Policy` meta tag (`default-src 'none'; style-src 'unsafe-inline'; img-src data:`) that blocks all external network requests (remote images, fetch/XHR, frames, fonts), mitigating IP tracking and SSRF against local services from crafted Markdown assets
+- **External URL Confirmation Dialog** — Clicking an `http(s)://` link in the preview now presents a localized confirmation dialog showing the full URL before launching the system browser, mitigating phishing via the address-bar-less preview
+
+### Fixed
+
+- **Localization Gather Path** — Corrected `SearchDirectoryPaths` in `Config/Localization/MarkdownEditor_Gather.ini` which pointed to a non-existent directory (`Plugins/MarkdownEditor/Source`) left over from an earlier plugin rename; now targets `Plugins/MarkdownAsset/Source/MarkdownAssetEditor` so `LOCTEXT` / `NSLOCTEXT` strings are collected correctly by the Localization Dashboard
+
 ## [1.1.0] - 2026-04-04
 
 ### Added
