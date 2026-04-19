@@ -25,7 +25,10 @@
 #include "UObject/UObjectGlobals.h"
 #include "UObject/SoftObjectPath.h"
 #include "UObject/Package.h"
+#include "Misc/EngineVersionComparison.h"
+#if UE_VERSION_OLDER_THAN(5, 6, 0)
 #include "UObject/MetaData.h"
+#endif
 #include "Misc/PackageName.h"
 
 #define LOCTEXT_NAMESPACE "MarkdownAssetEditor"
@@ -858,7 +861,11 @@ void FMarkdownAssetEditorToolkit::OpenLinkedUnrealAsset(const FString& ObjectPat
 		{
 			ForEachObjectWithPackage(LoadedPackage, [&LoadedAsset](UObject* Obj)
 			{
-				if (Obj && Obj->IsAsset() && !Obj->IsA<UMetaData>())
+				if (Obj && Obj->IsAsset()
+#if UE_VERSION_OLDER_THAN(5, 6, 0)
+					&& !Obj->IsA<UMetaData>()
+#endif
+					)
 				{
 					LoadedAsset = Obj;
 					return false;
