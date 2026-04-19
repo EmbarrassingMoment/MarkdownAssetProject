@@ -25,7 +25,7 @@
 - **Blueprint サポート** — Blueprint から `RawMarkdownText` の読み書きと `GetParsedHTML()`、`GetRawMarkdownText()`、`GetPlainText()` の呼び出しが可能です。
 - **ツールバーとキーボードショートカット** — 一般的なMarkdown操作のためのキーボードショートカットを備えた組み込みのフォーマットツールバーを用意しています。
 - **元に戻す / やり直し** — Unreal Editorのトランザクションシステムと統合された完全なUndo/Redoサポート（Ctrl+Z / Ctrl+Y）
-- **セキュリティ** — ユーザー提供のMarkdownレンダリング時のXSSを防止するため、生のHTMLブロックおよびインラインHTMLはデフォルトで無効化しています。また、プレビューブラウザのナビゲーションはホワイトリスト方式を採用しており、`data:`・`about:`・`mdasset://`・`ueasset://`・`class://`・`http(s)://` のみを許可し、`javascript:` や `file:` などの未知スキームをブロックすることで、信頼できないMarkdownによるスクリプト実行やローカルファイルアクセスを防いでいます。さらに、プレビューページには `Content-Security-Policy`（`default-src 'none'; style-src 'unsafe-inline'; img-src data:`）を注入し、外部ネットワークへのリクエスト（外部画像・fetch/XHR・フレーム等）をブロックすることで、IP追跡やローカルサービスへのSSRFを防止しています。
+- **セキュリティ** — ユーザー提供のMarkdownレンダリング時のXSSを防止するため、生のHTMLブロックおよびインラインHTMLはデフォルトで無効化しています。また、プレビューブラウザのナビゲーションはホワイトリスト方式を採用しており、`data:`・`about:`・`mdasset://`・`ueasset://`・`class://`・`http(s)://` のみを許可し、`javascript:` や `file:` などの未知スキームをブロックすることで、信頼できないMarkdownによるスクリプト実行やローカルファイルアクセスを防いでいます。さらに、プレビューページには `Content-Security-Policy`（`default-src 'none'; style-src 'unsafe-inline'; img-src data:`）を注入し、外部ネットワークへのリクエスト（外部画像・fetch/XHR・フレーム等）をブロックすることで、IP追跡やローカルサービスへのSSRFを防止しています。外部 `http(s)://` リンクをクリックした際は必ず確認ダイアログで完全なURLを表示してからシステムブラウザで開くため、細工されたMarkdownアセットによるフィッシングを軽減します。
 - **ローカライズ** — エディタUIは英語と日本語に対応しています。
 - **ニバイト文字対応** — 日本語などのニバイト文字を含むMarkdownテキストを正しく処理・表示できます。
 
