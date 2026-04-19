@@ -30,6 +30,7 @@
 #include "UObject/MetaData.h"
 #endif
 #include "Misc/PackageName.h"
+#include "Misc/MessageDialog.h"
 
 #define LOCTEXT_NAMESPACE "MarkdownAssetEditor"
 
@@ -760,10 +761,24 @@ bool FMarkdownAssetEditorToolkit::HandleBeforeNavigation(const FString& Url, con
 		return true;
 	}
 
-	// Open external URLs in the system browser
+	// Open external URLs in the system browser after user confirmation.
+	// The preview has no address bar, so we always prompt with the full URL
+	// to let the user inspect it before launching (phishing mitigation).
 	if (Url.StartsWith(TEXT("http://")) || Url.StartsWith(TEXT("https://")))
 	{
-		FPlatformProcess::LaunchURL(*Url, nullptr, nullptr);
+		const FText Message = FText::Format(
+			LOCTEXT("ConfirmExternalUrlMessage", "Open this URL in your default browser?\n\n{0}"),
+			FText::FromString(Url)
+		);
+		const EAppReturnType::Type Response = FMessageDialog::Open(
+			EAppMsgType::YesNo,
+			Message,
+			LOCTEXT("ConfirmExternalUrlTitle", "Open External URL")
+		);
+		if (Response == EAppReturnType::Yes)
+		{
+			FPlatformProcess::LaunchURL(*Url, nullptr, nullptr);
+		}
 		return true;
 	}
 
