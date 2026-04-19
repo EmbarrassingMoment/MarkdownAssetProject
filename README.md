@@ -26,7 +26,7 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 - **Blueprint Support** — Read/write `RawMarkdownText` and call `GetParsedHTML()`, `GetRawMarkdownText()`, and `GetPlainText()` from Blueprints
 - **Toolbar & Keyboard Shortcuts** — Built-in formatting toolbar with keyboard shortcuts for common Markdown operations
 - **Undo / Redo** — Full undo/redo support integrated with the Unreal Editor transaction system (Ctrl+Z / Ctrl+Y)
-- **Security** — Raw HTML blocks and inline HTML are disabled by default to prevent XSS when rendering user-supplied Markdown
+- **Security** — Raw HTML blocks and inline HTML are disabled by default to prevent XSS when rendering user-supplied Markdown. The preview browser's navigation handler uses a strict allowlist — only `data:`, `about:`, `mdasset://`, `ueasset://`, `class://`, and `http(s)://` are permitted; unknown schemes such as `javascript:` and `file:` are blocked to prevent script execution or local file access from untrusted Markdown content
 - **Localization** — Editor UI is fully localized for English and Japanese
 
 ![Dark Theme Preview](docs/images/dark-theme-preview.png)
