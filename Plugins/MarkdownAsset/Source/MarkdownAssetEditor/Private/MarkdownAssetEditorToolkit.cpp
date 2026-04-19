@@ -76,6 +76,8 @@ static FString GenerateStyledHtml(const FString& ParsedHtml)
 		"<!DOCTYPE html>\n"
 		"<html><head>\n"
 		"<meta charset=\"utf-8\">\n"
+		"<meta http-equiv=\"Content-Security-Policy\""
+		" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src data:;\">\n"
 		"<style>\n"
 		"body { font-family: 'Segoe UI', 'Meiryo', 'Yu Gothic', sans-serif; background-color: #1e1e1e; color: #cccccc; padding: 20px; }\n"
 		"h1, h2, h3, h4, h5, h6 { color: #ffffff; border-bottom: 1px solid #444; padding-bottom: 5px; }\n"
