@@ -38,6 +38,36 @@ static FString PercentEncode(const FString& Input)
 }
 
 /**
+ * Percent-encodes a URI path while preserving the path-separator '/' so the result
+ * forms a well-formed scheme:///path URL (e.g. "ueasset:///Game/Foo/Bar"). Encoding
+ * every '/' produced an invalid authority-only URL that CEF failed to navigate.
+ */
+static FString PercentEncodePath(const FString& Input)
+{
+	FTCHARToUTF8 Utf8(*Input);
+	const char* Data = Utf8.Get();
+	int32 Len = Utf8.Length();
+
+	FString Encoded;
+	Encoded.Reserve(Len * 3);
+
+	for (int32 i = 0; i < Len; ++i)
+	{
+		uint8 Ch = static_cast<uint8>(Data[i]);
+		if ((Ch >= 'A' && Ch <= 'Z') || (Ch >= 'a' && Ch <= 'z') || (Ch >= '0' && Ch <= '9')
+			|| Ch == '-' || Ch == '_' || Ch == '.' || Ch == '~' || Ch == '/')
+		{
+			Encoded.AppendChar(static_cast<TCHAR>(Ch));
+		}
+		else
+		{
+			Encoded += FString::Printf(TEXT("%%%02X"), Ch);
+		}
+	}
+	return Encoded;
+}
+
+/**
  * Converts md4c-html wikilink elements to anchor tags with the mdasset:// scheme.
  * Input:  <x-wikilink data-target="Name">Name</x-wikilink>
  * Output: <a href="mdasset://EncodedName">Name</a>
@@ -70,6 +100,74 @@ static FString PostProcessWikilinks(const FString& Html)
 	Result = Result.Replace(TEXT("</x-wikilink>"), TEXT("</a>"));
 
 	return Result;
+}
+
+/** Decodes HTML numeric/named entities that md4c emits inside href values (e.g. &amp;, &#x2F;). */
+static FString DecodeHtmlEntitiesInHref(const FString& Input)
+{
+	FString Output = Input;
+	Output.ReplaceInline(TEXT("&amp;"), TEXT("&"));
+	Output.ReplaceInline(TEXT("&#x2F;"), TEXT("/"));
+	Output.ReplaceInline(TEXT("&#47;"), TEXT("/"));
+	Output.ReplaceInline(TEXT("&lt;"), TEXT("<"));
+	Output.ReplaceInline(TEXT("&gt;"), TEXT(">"));
+	Output.ReplaceInline(TEXT("&quot;"), TEXT("\""));
+	return Output;
+}
+
+/**
+ * Rewrites anchor tags whose href targets a UE package path or class reference
+ * into custom URL schemes intercepted by the editor toolkit:
+ *   [Label](/Game/Foo/Bar)         -> <a href="ueasset:///Game/Foo/Bar">
+ *   [Label](class://MyClass)       -> <a href="class://MyClass">          (normalized)
+ * http/https/mdasset/data URLs are left untouched.
+ */
+static FString PostProcessAssetAndClassLinks(const FString& Html)
+{
+	// Capture every <a href="..."> (non-greedy) so we can classify the href.
+	const FRegexPattern AnchorPattern(TEXT("<a href=\"([^\"]*)\""));
+	FRegexMatcher Matcher(AnchorPattern, Html);
+
+	FString Processed;
+	int32 LastPos = 0;
+
+	while (Matcher.FindNext())
+	{
+		Processed += Html.Mid(LastPos, Matcher.GetMatchBeginning() - LastPos);
+
+		FString Href = Matcher.GetCaptureGroup(1);
+		const FString DecodedHref = DecodeHtmlEntitiesInHref(Href);
+
+		const bool bIsPackagePath =
+			DecodedHref.StartsWith(TEXT("/Game/")) ||
+			DecodedHref.StartsWith(TEXT("/Engine/")) ||
+			DecodedHref.StartsWith(TEXT("/Plugins/")) ||
+			DecodedHref.StartsWith(TEXT("/Script/"));
+		const bool bIsClassScheme = DecodedHref.StartsWith(TEXT("class://"));
+
+		if (bIsPackagePath)
+		{
+			// Produce "ueasset:///Game/Foo/Bar" (scheme + empty authority + path);
+			// path separators must stay literal for CEF to parse the URL.
+			const FString Encoded = PercentEncodePath(DecodedHref);
+			Processed += FString::Printf(TEXT("<a href=\"ueasset://%s\""), *Encoded);
+		}
+		else if (bIsClassScheme)
+		{
+			const FString ClassName = DecodedHref.Mid(FString(TEXT("class://")).Len());
+			const FString Encoded = PercentEncode(ClassName);
+			Processed += FString::Printf(TEXT("<a href=\"class://%s\""), *Encoded);
+		}
+		else
+		{
+			Processed += Html.Mid(Matcher.GetMatchBeginning(), Matcher.GetMatchEnding() - Matcher.GetMatchBeginning());
+		}
+
+		LastPos = Matcher.GetMatchEnding();
+	}
+	Processed += Html.Mid(LastPos);
+
+	return Processed;
 }
 
 /**
@@ -109,6 +207,7 @@ FString UMarkdownAsset::GetParsedHTML() const
 	}
 
 	OutputHtml = PostProcessWikilinks(OutputHtml);
+	OutputHtml = PostProcessAssetAndClassLinks(OutputHtml);
 
 	return OutputHtml;
 }
