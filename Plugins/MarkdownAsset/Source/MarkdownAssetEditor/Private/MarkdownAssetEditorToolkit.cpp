@@ -766,9 +766,9 @@ bool FMarkdownAssetEditorToolkit::HandleBeforeNavigation(const FString& Url, con
 	// to let the user inspect it before launching (phishing mitigation).
 	if (Url.StartsWith(TEXT("http://")) || Url.StartsWith(TEXT("https://")))
 	{
-		const FText Message = FText::Format(
-			LOCTEXT("ConfirmExternalUrlMessage", "Open this URL in your default browser?\n\n{0}"),
-			FText::FromString(Url)
+		const FText Prompt = LOCTEXT("ConfirmExternalUrlMessage", "Open this URL in your default browser?");
+		const FText Message = FText::FromString(
+			FString::Printf(TEXT("%s\n\n%s"), *Prompt.ToString(), *Url)
 		);
 		const EAppReturnType::Type Response = FMessageDialog::Open(
 			EAppMsgType::YesNo,
