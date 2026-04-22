@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+- **Copyright Header** — Replaced leftover Unreal Engine template copyright (`Copyright Epic Games, Inc. All Rights Reserved.`) with the project MIT header (`Copyright (c) 2026 Kurorekishi (EmbarrassingMoment).`) in `Source/MarkdownAssetProject.cpp`, `.h`, `.Build.cs`, and both `.Target.cs` files
+
 ## [1.2.0] - 2026-04-18
 
 ### Added
