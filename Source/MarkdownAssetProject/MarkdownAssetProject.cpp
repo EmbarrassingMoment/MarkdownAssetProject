@@ -1,4 +1,4 @@
-// Copyright Epic Games, Inc. All Rights Reserved.
+// Copyright (c) 2026 Kurorekishi (EmbarrassingMoment).
 
 #include "MarkdownAssetProject.h"
 #include "Modules/ModuleManager.h"
