@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **Markitdown Settings (Phase 1)** — Added `UMarkitdownSettings` (Project Settings > Plugins > Markitdown) and `FMarkitdownEnvironment` helpers for executable discovery and command-line composition. Lays the groundwork for the upcoming markitdown-based "Convert to Markdown" import flow (#60); no conversion is performed yet
+
 ## [1.2.1] - 2026-04-22
 
 ### Fixed
