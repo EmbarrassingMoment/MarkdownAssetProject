@@ -30,7 +30,9 @@ public class MarkdownAssetEditor : ModuleRules
 				"WorkspaceMenuStructure",
 				"WebBrowser",
 				"AssetRegistry",
-				"SourceCodeAccess"
+				"SourceCodeAccess",
+				"DeveloperSettings",
+				"Settings"
 			}
 		);
 	}
