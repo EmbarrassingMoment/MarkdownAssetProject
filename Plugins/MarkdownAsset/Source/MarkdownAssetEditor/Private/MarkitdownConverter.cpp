@@ -308,6 +308,8 @@ void FMarkitdownConversionTask::DeliverResult(FMarkitdownConversionResult Result
 
 namespace
 {
+	TSharedPtr<FMarkitdownConversionTask, ESPMode::ThreadSafe> GActiveAsyncTask;
+
 	void ExecuteConsoleConvertSync(const TArray<FString>& Args)
 	{
 		if (Args.Num() == 0)
@@ -330,10 +332,72 @@ namespace
 			Result.OutputMarkdown.Len(), PreviewLen, *Result.OutputMarkdown.Left(PreviewLen));
 	}
 
+	void ExecuteConsoleConvertAsync(const TArray<FString>& Args)
+	{
+		if (Args.Num() == 0)
+		{
+			UE_LOG(LogMarkitdown, Warning, TEXT("Usage: Markitdown.ConvertAsync <input-file-path>"));
+			return;
+		}
+
+		if (GActiveAsyncTask.IsValid())
+		{
+			UE_LOG(LogMarkitdown, Warning, TEXT("An async conversion is already in flight. Run Markitdown.ConvertAsyncCancel first."));
+			return;
+		}
+
+		const FString InputPath = FPaths::ConvertRelativePathToFull(Args[0]);
+		UE_LOG(LogMarkitdown, Display, TEXT("Starting async conversion: %s"), *InputPath);
+
+		FOnMarkitdownConversionComplete OnComplete;
+		OnComplete.BindLambda([](const FMarkitdownConversionResult& Result)
+		{
+			if (Result.bSucceeded)
+			{
+				const int32 PreviewLen = FMath::Min(Result.OutputMarkdown.Len(), 500);
+				UE_LOG(LogMarkitdown, Display, TEXT("Async conversion succeeded (%d chars). First %d chars:\n%s"),
+					Result.OutputMarkdown.Len(), PreviewLen, *Result.OutputMarkdown.Left(PreviewLen));
+			}
+			else
+			{
+				UE_LOG(LogMarkitdown, Error, TEXT("Async conversion failed: %s"), *Result.ErrorMessage.ToString());
+				UE_LOG(LogMarkitdown, Error, TEXT("Diagnostics:\n%s"), *Result.Diagnostics);
+			}
+			GActiveAsyncTask.Reset();
+		});
+
+		GActiveAsyncTask = FMarkitdownConverter::ConvertAsync(InputPath, OnComplete);
+		if (!GActiveAsyncTask.IsValid())
+		{
+			UE_LOG(LogMarkitdown, Warning, TEXT("Async conversion did not start (preflight failure already reported)."));
+		}
+	}
+
+	void ExecuteConsoleCancelAsync(const TArray<FString>& /*Args*/)
+	{
+		if (!GActiveAsyncTask.IsValid())
+		{
+			UE_LOG(LogMarkitdown, Warning, TEXT("No async conversion in flight."));
+			return;
+		}
+		UE_LOG(LogMarkitdown, Display, TEXT("Cancelling in-flight async conversion."));
+		GActiveAsyncTask->Cancel();
+	}
+
 	FAutoConsoleCommand GMarkitdownConvertSyncCmd(
 		TEXT("Markitdown.ConvertSync"),
 		TEXT("Synchronously convert <file> via markitdown and log the result."),
 		FConsoleCommandWithArgsDelegate::CreateStatic(&ExecuteConsoleConvertSync));
+
+	FAutoConsoleCommand GMarkitdownConvertAsyncCmd(
+		TEXT("Markitdown.ConvertAsync"),
+		TEXT("Asynchronously convert <file> via markitdown; result is logged on the game thread."),
+		FConsoleCommandWithArgsDelegate::CreateStatic(&ExecuteConsoleConvertAsync));
+
+	FAutoConsoleCommand GMarkitdownConvertAsyncCancelCmd(
+		TEXT("Markitdown.ConvertAsyncCancel"),
+		TEXT("Cancel the in-flight Markitdown.ConvertAsync task, if any."),
+		FConsoleCommandWithArgsDelegate::CreateStatic(&ExecuteConsoleCancelAsync));
 }
 
 #undef LOCTEXT_NAMESPACE
