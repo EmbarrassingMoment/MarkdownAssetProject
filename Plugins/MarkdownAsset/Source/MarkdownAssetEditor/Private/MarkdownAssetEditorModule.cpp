@@ -13,12 +13,12 @@
 
 #define LOCTEXT_NAMESPACE "FMarkdownAssetEditorModule"
 
-DEFINE_LOG_CATEGORY_STATIC(LogMarkdownAssetEditor, Log, All);
+DEFINE_LOG_CATEGORY_STATIC(LogMarkdownAssetMenu, Log, All);
 
 /** Registers the Markdown asset category, type actions, and thumbnail renderer. */
 void FMarkdownAssetEditorModule::StartupModule()
 {
-	UE_LOG(LogMarkdownAssetEditor, Display, TEXT("StartupModule begin (Phase 4 build, menu hookup enabled)"));
+	UE_LOG(LogMarkdownAssetMenu, Display, TEXT("StartupModule begin (Phase 4 build, menu hookup enabled)"));
 
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
 
@@ -34,7 +34,7 @@ void FMarkdownAssetEditorModule::StartupModule()
 
 	// Defer menu hookup until after all default-phase modules (including LevelEditor)
 	// have registered their menus. Also handle hot-reload where the engine is already up.
-	UE_LOG(LogMarkdownAssetEditor, Display, TEXT("Scheduling menu registration (GIsRunning=%d)"), GIsRunning ? 1 : 0);
+	UE_LOG(LogMarkdownAssetMenu, Display, TEXT("Scheduling menu registration (GIsRunning=%d)"), GIsRunning ? 1 : 0);
 	if (GIsRunning)
 	{
 		RegisterMenus();
@@ -48,11 +48,11 @@ void FMarkdownAssetEditorModule::StartupModule()
 /** Adds 'Batch Convert to Markdown...' under Tools > Markdown. */
 void FMarkdownAssetEditorModule::RegisterMenus()
 {
-	UE_LOG(LogMarkdownAssetEditor, Display, TEXT("RegisterMenus invoked"));
+	UE_LOG(LogMarkdownAssetMenu, Display, TEXT("RegisterMenus invoked"));
 
 	if (!UToolMenus::IsToolMenuUIEnabled())
 	{
-		UE_LOG(LogMarkdownAssetEditor, Warning, TEXT("UToolMenus UI is not enabled; Markitdown menu entry will not appear."));
+		UE_LOG(LogMarkdownAssetMenu, Warning, TEXT("UToolMenus UI is not enabled; Markitdown menu entry will not appear."));
 		return;
 	}
 
@@ -61,7 +61,7 @@ void FMarkdownAssetEditorModule::RegisterMenus()
 	UToolMenu* ToolsMenu = UToolMenus::Get()->ExtendMenu("LevelEditor.MainMenu.Tools");
 	if (!ToolsMenu)
 	{
-		UE_LOG(LogMarkdownAssetEditor, Warning, TEXT("ExtendMenu(LevelEditor.MainMenu.Tools) returned null; Markitdown menu entry will not appear."));
+		UE_LOG(LogMarkdownAssetMenu, Warning, TEXT("ExtendMenu(LevelEditor.MainMenu.Tools) returned null; Markitdown menu entry will not appear."));
 		return;
 	}
 
@@ -78,7 +78,7 @@ void FMarkdownAssetEditorModule::RegisterMenus()
 			UMarkitdownBlueprintLibrary::RunBatchConvertWizard(FString());
 		})));
 
-	UE_LOG(LogMarkdownAssetEditor, Log, TEXT("Registered Tools > Markdown > Batch Convert to Markdown menu entry."));
+	UE_LOG(LogMarkdownAssetMenu, Log, TEXT("Registered Tools > Markdown > Batch Convert to Markdown menu entry."));
 }
 
 /** Unregisters asset type actions when the module is unloaded. */
