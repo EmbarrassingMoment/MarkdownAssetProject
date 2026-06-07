@@ -18,6 +18,8 @@ DEFINE_LOG_CATEGORY_STATIC(LogMarkdownAssetEditor, Log, All);
 /** Registers the Markdown asset category, type actions, and thumbnail renderer. */
 void FMarkdownAssetEditorModule::StartupModule()
 {
+	UE_LOG(LogMarkdownAssetEditor, Display, TEXT("StartupModule begin (Phase 4 build, menu hookup enabled)"));
+
 	IAssetTools& AssetTools = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get();
 
 	// Register custom asset category
@@ -32,6 +34,7 @@ void FMarkdownAssetEditorModule::StartupModule()
 
 	// Defer menu hookup until after all default-phase modules (including LevelEditor)
 	// have registered their menus. Also handle hot-reload where the engine is already up.
+	UE_LOG(LogMarkdownAssetEditor, Display, TEXT("Scheduling menu registration (GIsRunning=%d)"), GIsRunning ? 1 : 0);
 	if (GIsRunning)
 	{
 		RegisterMenus();
@@ -45,6 +48,8 @@ void FMarkdownAssetEditorModule::StartupModule()
 /** Adds 'Batch Convert to Markdown...' under Tools > Markdown. */
 void FMarkdownAssetEditorModule::RegisterMenus()
 {
+	UE_LOG(LogMarkdownAssetEditor, Display, TEXT("RegisterMenus invoked"));
+
 	if (!UToolMenus::IsToolMenuUIEnabled())
 	{
 		UE_LOG(LogMarkdownAssetEditor, Warning, TEXT("UToolMenus UI is not enabled; Markitdown menu entry will not appear."));
