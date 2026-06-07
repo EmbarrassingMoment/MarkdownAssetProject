@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - **Markitdown Settings (Phase 1)** — Added `UMarkitdownSettings` (Project Settings > Plugins > Markitdown) and `FMarkitdownEnvironment` helpers for executable discovery and command-line composition. Lays the groundwork for the upcoming markitdown-based "Convert to Markdown" import flow (#60); no conversion is performed yet
 - **Markitdown Converter (Phase 2)** — Added `FMarkitdownConverter` and `FMarkitdownConversionTask` that invoke markitdown as an external process (synchronous and asynchronous), capture stdout/stderr diagnostics, surface failures via `FMessageDialog` + `UE_LOG`, and expose a `Markitdown.ConvertSync <file>` console command for verification. Import factory / EUW wiring is tracked in #68 / #69 (#67)
+- **Markitdown Import Factory (Phase 3)** — Added `UMarkitdownImportFactory` which registers `.pdf` / `.docx` / `.pptx` / `.html` / `.htm` with the Content Browser. Dragging one of these files in (or invoking Reimport on the resulting `UMarkdownAsset`) runs markitdown and stores the converted Markdown as the asset body. EUW batch UI is still tracked in #69 (#68)
 
 ## [1.2.1] - 2026-04-22
 
