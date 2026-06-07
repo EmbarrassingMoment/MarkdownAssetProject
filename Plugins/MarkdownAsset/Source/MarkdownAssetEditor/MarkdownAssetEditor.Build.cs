@@ -32,7 +32,9 @@ public class MarkdownAssetEditor : ModuleRules
 				"AssetRegistry",
 				"SourceCodeAccess",
 				"DeveloperSettings",
-				"Settings"
+				"Settings",
+				"DesktopPlatform",
+				"ToolMenus"
 			}
 		);
 	}

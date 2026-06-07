@@ -23,6 +23,9 @@ public:
 	virtual void ShutdownModule() override;
 
 private:
+	/** Adds the Markitdown entry under Tools menu via UToolMenus. */
+	void RegisterMenus();
+
 	/** Shared pointer to the registered asset type actions. */
 	TSharedPtr<FMarkdownAssetActions> MarkdownAssetActions;
 
