@@ -29,6 +29,10 @@ public:
 
 	virtual FName GetCategoryName() const override;
 
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
+
 	/** Strategy used to invoke the markitdown tool. */
 	UPROPERTY(EditAnywhere, config, Category = "Execution")
 	EMarkitdownExecutionMode ExecutionMode;
