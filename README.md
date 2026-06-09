@@ -20,6 +20,7 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 - **Dark Theme** — Styled HTML output with a dark background for comfortable reading
 - **Content Browser Integration** — Create new Markdown assets directly from the context menu, with custom thumbnail previews showing the "MD" label and the first few lines of content
 - **Import / Export** — Drag-and-drop `.md` / `.markdown` files into the Content Browser to import, reimport from source files, or export assets back to `.md`
+- **Markitdown Integration** — Import `.pdf` / `.docx` / `.pptx` / `.html` / `.htm` files directly into the Content Browser by routing them through Microsoft's [markitdown](https://github.com/microsoft/markitdown) CLI; Reimport re-runs the conversion against the stored source path. **Tools > Markdown > Batch Convert to Markdown...** opens a file picker and creates multiple `UMarkdownAsset` entries with a cancellable progress dialog. `UMarkitdownBlueprintLibrary` exposes the conversion helpers to Editor Utility Widgets and editor scripts
 - **GitHub Flavored Markdown** — Supports GFM extensions such as tables, task lists, and strikethrough via the `MD_DIALECT_GITHUB` flag
 - **Wikilinks** — Write `[[AssetName]]` to create inter-asset links; clicking a wikilink in the preview opens the target Markdown asset in a new editor tab. Broken links (pointing to non-existent assets) are highlighted in red
 - **Asset & Class Links** — Use standard Markdown syntax `[Label](/Game/Path/To/Asset)` to link to any Content Browser asset (including Blueprints), and `[Label](class://ClassName)` to link to a C++ or Blueprint class. Clicking opens the target in its asset editor or jumps to the C++ source in your IDE; unresolved targets are highlighted in red
@@ -57,6 +58,7 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 - Unreal Engine 5.5 or later
 - C++ project (the plugin includes native modules)
 - `WebBrowserWidget` plugin (enabled automatically as a dependency)
+- **Optional (Markitdown only)**: Python 3.10+ with the `markitdown` package (`pip install markitdown`) or [`uv`](https://github.com/astral-sh/uv) on `PATH`. Required only when importing `.pdf` / `.docx` / `.pptx` / `.html` source files; the core `.md` workflow does not need it
 
 ## Installation
 
@@ -81,6 +83,18 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 - **Import**: Drag a `.md` or `.markdown` file into the Content Browser to create a Markdown asset.
 - **Reimport**: Right-click an imported asset and select **Reimport** to reload from the original source file.
 - **Export**: Right-click a Markdown asset and select **Asset Actions > Export** to save it as a `.md` file.
+
+### Markitdown (PDF / DOCX / PPTX / HTML)
+
+Source files that are not Markdown can be brought in through the [markitdown](https://github.com/microsoft/markitdown) CLI. The resulting Markdown becomes the body of a new `UMarkdownAsset`.
+
+- **Configure**: Open **Project Settings > Plugins > Markitdown** and pick an Execution Mode:
+  - `uvx` (default) — runs `uvx markitdown ...`; requires [`uv`](https://github.com/astral-sh/uv) on `PATH`
+  - `System Python` — runs `python -m markitdown ...`; set Python Executable Path if it is not on `PATH`
+  - `Custom` — supply your own executable path in Custom Command
+- **Single file**: Drag a `.pdf` / `.docx` / `.pptx` / `.html` / `.htm` file into the Content Browser. A progress dialog appears while markitdown runs; the source path is stored so **Reimport** re-runs the conversion.
+- **Batch**: Pick **Tools > Markdown > Batch Convert to Markdown...** to select multiple files and create assets under `/Game/Markdown/` (or any path provided to the Blueprint helper). The progress dialog is cancellable.
+- **Blueprint / EUW**: `UMarkitdownBlueprintLibrary` exposes `PromptForSourceFiles`, `ConvertFileToMarkdownAsset`, `ConvertFilesToMarkdownAssets`, and `RunBatchConvertWizard` so you can build a custom Editor Utility Widget on top.
 
 ### Linking Syntax
 
@@ -111,6 +125,15 @@ Path roots recognised as Unreal asset links: `/Game/`, `/Engine/`, `/Plugins/`, 
 - **GetRawMarkdownText** returns the source Markdown, intended for future extensibility (e.g., custom rendering pipelines).
 
 ![Blueprint Nodes](docs/images/blueprint-nodes.png)
+
+`UMarkitdownBlueprintLibrary` (editor-only) provides batch-conversion helpers callable from Editor Utility Widgets and editor scripts:
+
+| Node | Return Type | Description |
+|------|-------------|-------------|
+| `PromptForSourceFiles` | `TArray<FString>` | Opens an OS file picker filtered to markitdown-supported formats |
+| `ConvertFileToMarkdownAsset` | `UMarkdownAsset*` | Converts a single file synchronously and creates a new asset under the supplied package path |
+| `ConvertFilesToMarkdownAssets` | `TArray<UMarkdownAsset*>` | Batch-converts multiple files with a cancellable progress dialog |
+| `RunBatchConvertWizard` | `void` | End-to-end wizard: prompt, convert, notify |
 
 ## Project Structure
 

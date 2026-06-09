@@ -19,6 +19,7 @@
 - **ダークテーマ** — 快適に読めるように暗い背景でスタイリングされたHTML出力。
 - **コンテンツブラウザの統合** — コンテキストメニューから直接新しいMarkdownアセットを作成できます。「MD」ラベルとコンテンツの最初の数行を表示するカスタムサムネイルプレビュー付きです。
 - **インポート / エクスポート** — `.md` / `.markdown` ファイルをコンテンツブラウザにドラッグ＆ドロップしてインポート、ソースファイルからのリインポート、および `.md` ファイルへのエクスポートに対応しています。
+- **Markitdown 連携** — Microsoft の [markitdown](https://github.com/microsoft/markitdown) CLI を経由して `.pdf` / `.docx` / `.pptx` / `.html` / `.htm` ファイルをコンテンツブラウザに直接インポートできます。Reimport は保存された元ファイルパスに対して再変換を実行します。**Tools > Markdown > Batch Convert to Markdown...** からファイル選択ダイアログを開いて複数の `UMarkdownAsset` をまとめて作成でき、進捗ダイアログはキャンセル可能です。`UMarkitdownBlueprintLibrary` を通じて Editor Utility Widget やエディタスクリプトから変換ヘルパーを呼び出せます。
 - **GitHub Flavored Markdown** — `MD_DIALECT_GITHUB` フラグにより、テーブル、タスクリスト、取り消し線などの GFM 拡張構文をサポートしました。
 - **Wikilink** — `[[アセット名]]` と記述するだけでアセット間リンクを作成できます。プレビュー内のリンクをクリックすると、対象のMarkdownアセットが新しいタブで開きます。存在しないアセットへのリンクは赤色で表示されます。
 - **アセット・クラスリンク** — 標準Markdown構文 `[ラベル](/Game/Path/To/Asset)` でContent Browserのアセット（Blueprintを含む）、`[ラベル](class://クラス名)` でC++またはBlueprintクラスへのリンクを記述できます。クリックすると対応するアセットエディタが開き、C++クラスの場合はIDEでソースファイルが開きます。解決できないリンクは赤色で表示されます。
@@ -57,6 +58,7 @@
 - Unreal Engine 5.5 以降
 - C++プロジェクト (プラグインにネイティブモジュールが含まれているため)
 - `WebBrowserWidget` プラグイン (依存関係として自動的に有効になります)
+- **オプション (Markitdown 使用時のみ)**: Python 3.10 以降 + `markitdown` パッケージ (`pip install markitdown`)、または [`uv`](https://github.com/astral-sh/uv) が `PATH` 上にあること。`.pdf` / `.docx` / `.pptx` / `.html` 等のインポートでのみ必要で、`.md` 中心のワークフローでは不要です。
 
 ## インストール
 
@@ -81,6 +83,18 @@
 - **インポート**: `.md` または `.markdown` ファイルをコンテンツブラウザにドラッグするとMarkdownアセットが作成されます。
 - **リインポート**: インポートしたアセットを右クリックし、**Reimport** を選択すると元のソースファイルから再読み込みできます。
 - **エクスポート**: Markdownアセットを右クリックし、**Asset Actions > Export** を選択すると `.md` ファイルとして保存できます。
+
+### Markitdown 連携 (PDF / DOCX / PPTX / HTML)
+
+Markdown 以外のソースファイルは [markitdown](https://github.com/microsoft/markitdown) CLI を経由して取り込めます。変換結果が新規 `UMarkdownAsset` の本文になります。
+
+- **設定**: **Project Settings > Plugins > Markitdown** で実行モードを選択します:
+  - `uvx`（デフォルト） — `uvx markitdown ...` を実行。[`uv`](https://github.com/astral-sh/uv) が `PATH` 上にある必要があります
+  - `System Python` — `python -m markitdown ...` を実行。`PATH` に無い場合は Python Executable Path を指定
+  - `Custom` — 任意の実行ファイルパスを Custom Command で指定
+- **単一ファイル**: `.pdf` / `.docx` / `.pptx` / `.html` / `.htm` をコンテンツブラウザにドラッグ。markitdown 実行中は進捗ダイアログが表示され、ソースパスが保存されるので **Reimport** で再変換できます。
+- **一括変換**: **Tools > Markdown > Batch Convert to Markdown...** からファイルを複数選択して `/Game/Markdown/` 配下（または Blueprint ヘルパーに渡したパス）に一括生成。進捗ダイアログはキャンセル可能です。
+- **Blueprint / EUW**: `UMarkitdownBlueprintLibrary` が `PromptForSourceFiles` / `ConvertFileToMarkdownAsset` / `ConvertFilesToMarkdownAssets` / `RunBatchConvertWizard` を公開しているので、独自の Editor Utility Widget に組み込めます。
 
 ### リンク構文
 
@@ -111,6 +125,15 @@ Unrealアセットリンクとして認識されるパスルート: `/Game/`, `/
 - **GetRawMarkdownText** は、ソースの Markdown をそのまま返します。将来の拡張（カスタムレンダリングパイプラインなど）を想定しています。
 
 ![Blueprintノード](docs/images/blueprint-nodes.png)
+
+`UMarkitdownBlueprintLibrary` (エディタ専用) は Editor Utility Widget やエディタスクリプトから呼び出せる一括変換ヘルパーを提供します:
+
+| ノード | 戻り値の型 | 説明 |
+|------|-------------|-------------|
+| `PromptForSourceFiles` | `TArray<FString>` | markitdown 対応形式でフィルタした OS ファイルピッカーを開きます |
+| `ConvertFileToMarkdownAsset` | `UMarkdownAsset*` | 単一ファイルを同期変換し、指定パッケージパス配下に新規アセットを作成します |
+| `ConvertFilesToMarkdownAssets` | `TArray<UMarkdownAsset*>` | 複数ファイルをキャンセル可能な進捗ダイアログ付きで一括変換します |
+| `RunBatchConvertWizard` | `void` | ファイル選択 → バッチ変換 → 完了通知までを一括実行するウィザード |
 
 ## プロジェクト構造
 
