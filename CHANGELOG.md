@@ -7,12 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-06-09
+
 ### Added
 
-- **Markitdown Settings (Phase 1)** — Added `UMarkitdownSettings` (Project Settings > Plugins > Markitdown) and `FMarkitdownEnvironment` helpers for executable discovery and command-line composition. Lays the groundwork for the upcoming markitdown-based "Convert to Markdown" import flow (#60); no conversion is performed yet
-- **Markitdown Converter (Phase 2)** — Added `FMarkitdownConverter` and `FMarkitdownConversionTask` that invoke markitdown as an external process (synchronous and asynchronous), capture stdout/stderr diagnostics, surface failures via `FMessageDialog` + `UE_LOG`, and expose a `Markitdown.ConvertSync <file>` console command for verification. Import factory / EUW wiring is tracked in #68 / #69 (#67)
-- **Markitdown Import Factory (Phase 3)** — Added `UMarkitdownImportFactory` which registers `.pdf` / `.docx` / `.pptx` / `.html` / `.htm` with the Content Browser. Dragging one of these files in (or invoking Reimport on the resulting `UMarkdownAsset`) runs markitdown and stores the converted Markdown as the asset body. EUW batch UI is still tracked in #69 (#68)
-- **Markitdown Batch Convert (Phase 4)** — Added `UMarkitdownBlueprintLibrary` exposing `PromptForSourceFiles`, `ConvertFileToMarkdownAsset`, `ConvertFilesToMarkdownAssets`, and `RunBatchConvertWizard` to Blueprint / Editor Utility Widgets, plus a **Tools > Markdown > Batch Convert to Markdown...** menu entry that runs the end-to-end wizard with a cancellable progress dialog and a completion notification (#69)
+- **Convert Documents to Markdown** — Import `.pdf` / `.docx` / `.pptx` / `.html` / `.htm` files as `UMarkdownAsset` using [markitdown](https://github.com/microsoft/markitdown). Drag a supported file into the Content Browser (or **Reimport** an existing asset) to run the conversion and store the result as the asset body (#60)
+- **Batch Convert to Markdown** — New **Tools > Markdown > Batch Convert to Markdown...** wizard converts multiple documents in one pass, with file selection, a cancellable progress dialog, and a completion notification. The same operations are Blueprint / Editor Utility Widget callable via `UMarkitdownBlueprintLibrary` (#60)
+- **Markitdown Settings** — New **Project Settings > Plugins > Markitdown** page for configuring the markitdown executable location and conversion behavior (#60)
 
 ## [1.2.1] - 2026-04-22
 
