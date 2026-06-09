@@ -7,12 +7,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-## [1.3.1] - 2026-06-09
-
-### Fixed
-
-- **Markitdown Settings Persistence** — Path and command fields in **Project Settings > Plugins > Markitdown** (Python Executable Path, Custom Command) were not written to `DefaultEditor.ini` and were lost on editor restart. The settings now persist their values explicitly when edited
-
 ## [1.3.0] - 2026-06-09
 
 ### Added
