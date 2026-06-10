@@ -58,7 +58,7 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 - Unreal Engine 5.5 or later
 - C++ project (the plugin includes native modules)
 - `WebBrowserWidget` plugin (enabled automatically as a dependency)
-- **Optional (Markitdown only)**: Python 3.10+ with the `markitdown` package (`pip install markitdown`) or [`uv`](https://github.com/astral-sh/uv) on `PATH`. Required only when importing `.pdf` / `.docx` / `.pptx` / `.html` source files; the core `.md` workflow does not need it
+- **Optional (Markitdown only)**: Python 3.10+ with the `markitdown` package (`pip install "markitdown[all]"`) or [`uv`](https://github.com/astral-sh/uv) on `PATH`. The `[all]` extra pulls in the format-specific dependencies needed for `.pdf` / `.docx` / `.pptx` conversion — a bare `pip install markitdown` may fail on those formats with a missing-dependency error. Required only when importing `.pdf` / `.docx` / `.pptx` / `.html` source files; the core `.md` workflow does not need it
 
 ## Installation
 
@@ -89,8 +89,8 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 Source files that are not Markdown can be brought in through the [markitdown](https://github.com/microsoft/markitdown) CLI. The resulting Markdown becomes the body of a new `UMarkdownAsset`.
 
 - **Configure**: Open **Project Settings > Plugins > Markitdown** and pick an Execution Mode:
-  - `uvx` (default) — runs `uvx markitdown ...`; requires [`uv`](https://github.com/astral-sh/uv) on `PATH`
-  - `System Python` — runs `python -m markitdown ...`; set Python Executable Path if it is not on `PATH`
+  - `uvx` (default) — runs `uvx markitdown ...`; requires [`uv`](https://github.com/astral-sh/uv) on `PATH`. To pull in the format extras, set Extra Arguments or use a custom command such as `uvx --from "markitdown[all]" markitdown`
+  - `System Python` — runs `python -m markitdown ...`; set Python Executable Path if it is not on `PATH`. Install the package with the format extras first: `pip install "markitdown[all]"`
   - `Custom` — supply your own executable path in Custom Command
 - **Single file**: Drag a `.pdf` / `.docx` / `.pptx` / `.html` / `.htm` file into the Content Browser. A progress dialog appears while markitdown runs; the source path is stored so **Reimport** re-runs the conversion.
 - **Batch**: Pick **Tools > Markdown > Batch Convert to Markdown...** to select multiple files and create assets under `/Game/Markdown/` (or any path provided to the Blueprint helper). The progress dialog is cancellable.
