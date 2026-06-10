@@ -32,6 +32,8 @@ Get up and running with the Markdown Editor plugin in minutes.
 - **Reimport** — Right-click an imported asset > **Reimport**.
 - **Export** — Right-click an asset > **Asset Actions > Export** to save as `.md`.
 
+> **Importing PDF / DOCX / PPTX / HTML?** These formats are routed through Microsoft's [markitdown](https://github.com/microsoft/markitdown) CLI, which is an optional external dependency. Install it first (`pip install "markitdown[all]"` or `uv`) — see the **Requirements** and **Markitdown** sections in [README.md](README.md) for setup details.
+
 ## 4. Use in Blueprints
 
 `UMarkdownAsset` provides three Blueprint-callable functions:

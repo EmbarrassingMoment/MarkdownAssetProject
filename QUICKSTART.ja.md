@@ -32,6 +32,8 @@ Markdown Editor プラグインを数分でセットアップして使い始め�
 - **再インポート** — インポート済みアセットを右クリック > **再インポート** を選択します。
 - **エクスポート** — アセットを右クリック > **アセットアクション > エクスポート** で `.md` ファイルとして保存します。
 
+> **PDF / DOCX / PPTX / HTML をインポートする場合:** これらの形式は Microsoft の [markitdown](https://github.com/microsoft/markitdown) CLI を経由して変換されます。markitdown は任意の外部依存ツールなので、先にインストールしてください（`pip install "markitdown[all]"` または `uv`）。セットアップの詳細は [README.ja.md](README.ja.md) の **前提条件** および **Markitdown** セクションを参照してください。
+
 ## 4. ブループリントでの使用
 
 `UMarkdownAsset` には、ブループリントから呼び出せる 3 つの関数があります:

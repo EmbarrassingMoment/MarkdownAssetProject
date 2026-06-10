@@ -58,7 +58,7 @@
 - Unreal Engine 5.5 以降
 - C++プロジェクト (プラグインにネイティブモジュールが含まれているため)
 - `WebBrowserWidget` プラグイン (依存関係として自動的に有効になります)
-- **オプション (Markitdown 使用時のみ)**: Python 3.10 以降 + `markitdown` パッケージ (`pip install markitdown`)、または [`uv`](https://github.com/astral-sh/uv) が `PATH` 上にあること。`.pdf` / `.docx` / `.pptx` / `.html` 等のインポートでのみ必要で、`.md` 中心のワークフローでは不要です。
+- **オプション (Markitdown 使用時のみ)**: Python 3.10 以降 + `markitdown` パッケージ (`pip install "markitdown[all]"`)、または [`uv`](https://github.com/astral-sh/uv) が `PATH` 上にあること。`[all]` エクストラは `.pdf` / `.docx` / `.pptx` 変換に必要なフォーマット別依存を導入します。素の `pip install markitdown` ではこれらのフォーマットで依存不足エラーになる場合があります。`.pdf` / `.docx` / `.pptx` / `.html` 等のインポートでのみ必要で、`.md` 中心のワークフローでは不要です。
 
 ## インストール
 
@@ -89,8 +89,8 @@
 Markdown 以外のソースファイルは [markitdown](https://github.com/microsoft/markitdown) CLI を経由して取り込めます。変換結果が新規 `UMarkdownAsset` の本文になります。
 
 - **設定**: **Project Settings > Plugins > Markitdown** で実行モードを選択します:
-  - `uvx`（デフォルト） — `uvx markitdown ...` を実行。[`uv`](https://github.com/astral-sh/uv) が `PATH` 上にある必要があります
-  - `System Python` — `python -m markitdown ...` を実行。`PATH` に無い場合は Python Executable Path を指定
+  - `uvx`（デフォルト） — `uvx markitdown ...` を実行。[`uv`](https://github.com/astral-sh/uv) が `PATH` 上にある必要があります。フォーマット別エクストラを導入するには Extra Arguments を設定するか、`uvx --from "markitdown[all]" markitdown` のようなカスタムコマンドを使用してください
+  - `System Python` — `python -m markitdown ...` を実行。`PATH` に無い場合は Python Executable Path を指定。事前にフォーマット別エクストラ付きでインストールしてください: `pip install "markitdown[all]"`
   - `Custom` — 任意の実行ファイルパスを Custom Command で指定
 - **単一ファイル**: `.pdf` / `.docx` / `.pptx` / `.html` / `.htm` をコンテンツブラウザにドラッグ。markitdown 実行中は進捗ダイアログが表示され、ソースパスが保存されるので **Reimport** で再変換できます。
 - **一括変換**: **Tools > Markdown > Batch Convert to Markdown...** からファイルを複数選択して `/Game/Markdown/` 配下（または Blueprint ヘルパーに渡したパス）に一括生成。進捗ダイアログはキャンセル可能です。
