@@ -9,9 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **Convert Documents to Markdown** — Import `.pdf` / `.docx` / `.pptx` / `.html` / `.htm` files as `UMarkdownAsset` using [markitdown](https://github.com/microsoft/markitdown). Drag a supported file into the Content Browser (or **Reimport** an existing asset) to run the conversion and store the result as the asset body (#60)
-- **Batch Convert to Markdown** — New **Tools > Markdown > Batch Convert to Markdown...** wizard converts multiple documents in one pass, with file selection, a cancellable progress dialog, and a completion notification. The same operations are Blueprint / Editor Utility Widget callable via `UMarkitdownBlueprintLibrary` (#60)
-- **Markitdown Settings** — New **Project Settings > Plugins > Markitdown** page for configuring the markitdown executable location and conversion behavior (#60)
+- **Convert Documents to Markdown** — Import `.pdf` / `.docx` / `.pptx` / `.html` / `.htm` files as `UMarkdownAsset` using [markitdown](https://github.com/microsoft/markitdown). Drag a supported file into the Content Browser (or **Reimport** an existing asset) to run the conversion and store the result as the asset body 
+- **Batch Convert to Markdown** — New **Tools > Markdown > Batch Convert to Markdown...** wizard converts multiple documents in one pass, with file selection, a cancellable progress dialog, and a completion notification. The same operations are Blueprint / Editor Utility Widget callable via `UMarkitdownBlueprintLibrary` 
+- **Markitdown Settings** — New **Project Settings > Plugins > Markitdown** page for configuring the markitdown executable location and conversion behavior
 
 ## [1.2.1] - 2026-04-22
 
