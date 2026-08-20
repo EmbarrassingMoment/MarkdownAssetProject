@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - **Outline Panel** — New dockable "Outline" tab in the Markdown editor listing every heading (H1–H6, including setext headings and headings inside blockquotes) as an indented list. Fenced and indented code blocks are excluded. The outline refreshes together with the debounced preview update
 - **Heading Navigation** — Clicking an outline entry moves the text editor cursor to the heading's line and scrolls the HTML preview to the matching heading via injected `id` anchors and `scrollIntoView`
+- **Image Preview** — `![Alt](/Game/Path/To/Texture)` now renders in the HTML preview: the referenced `UTexture2D` is loaded, its source pixels are compressed to PNG, and the image is embedded as a `data:image/png;base64` URI (compatible with the preview's `img-src data:` CSP — no external requests). Unresolvable texture paths render a red dashed placeholder. Textures larger than 12 MB as PNG are skipped with a log warning
+- **Paste Image from Clipboard** — New **Paste Image** toolbar button (Ctrl+Shift+V, Windows) reads the clipboard image (CF_DIB), creates a `UTexture2D` asset under `/Game/Markdown/Images/` with a unique timestamped name, and inserts the matching `![...](...)` link at the cursor
 - **Automation Tests** — New test suite (`MarkdownAsset.*` in the editor module) covering Markdown-to-HTML conversion (GFM extensions, raw-HTML escaping, wikilink and asset/class link rewriting), plain-text extraction, outline heading extraction and preview anchor alignment, the preview URL scheme allowlist (default-deny regression guard for `javascript:` / `file:` etc.), percent-decoding, and the Content-Security-Policy in the styled preview HTML
 
 ### Changed

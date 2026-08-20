@@ -109,6 +109,7 @@ FString MarkdownPreviewUtils::GenerateStyledHtml(const FString& ParsedHtml)
 "a[href^=\"class://\"]:hover { color: #d7a7d2; border-bottom-style: solid; }\n"
 "a.md-broken-link { color: #f44747; border-bottom-color: #f44747; }\n"
 "a.md-broken-link:hover { color: #ff6b6b; }\n"
+"span.md-missing-image { color: #f44747; border: 1px dashed #f44747; padding: 2px 6px; border-radius: 4px; }\n"
 		"</style></head><body>\n%s\n</body></html>"
 	), *ParsedHtml);
 }
