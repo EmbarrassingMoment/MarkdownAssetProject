@@ -2,8 +2,11 @@
 
 #include "MarkdownAssetEditorToolkit.h"
 #include "MarkdownAsset.h"
+#include "MarkdownOutline.h"
+#include "Framework/Application/SlateApplication.h"
 #include "Widgets/Docking/SDockTab.h"
 #include "Widgets/Input/SMultiLineEditableTextBox.h"
+#include "Widgets/Views/STableRow.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Text/SRichTextBlock.h"
@@ -309,6 +312,7 @@ void FMarkdownEditorCommands::RegisterCommands()
 
 const FName FMarkdownAssetEditorToolkit::AppIdentifier(TEXT("MarkdownAssetEditorApp"));
 const FName FMarkdownAssetEditorToolkit::MainTabId(TEXT("MarkdownAssetEditor_MainTab"));
+const FName FMarkdownAssetEditorToolkit::OutlineTabId(TEXT("MarkdownAssetEditor_OutlineTab"));
 
 FMarkdownAssetEditorToolkit::~FMarkdownAssetEditorToolkit()
 {
@@ -329,12 +333,17 @@ void FMarkdownAssetEditorToolkit::RegisterTabSpawners(const TSharedRef<class FTa
 	InTabManager->RegisterTabSpawner(MainTabId, FOnSpawnTab::CreateSP(this, &FMarkdownAssetEditorToolkit::SpawnTab_Main))
 		.SetDisplayName(LOCTEXT("MainTab", "Markdown Editor"))
 		.SetGroup(WorkspaceMenuCategory.ToSharedRef());
+
+	InTabManager->RegisterTabSpawner(OutlineTabId, FOnSpawnTab::CreateSP(this, &FMarkdownAssetEditorToolkit::SpawnTab_Outline))
+		.SetDisplayName(LOCTEXT("OutlineTab", "Outline"))
+		.SetGroup(WorkspaceMenuCategory.ToSharedRef());
 }
 
 void FMarkdownAssetEditorToolkit::UnregisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager)
 {
 	FAssetEditorToolkit::UnregisterTabSpawners(InTabManager);
 	InTabManager->UnregisterTabSpawner(MainTabId);
+	InTabManager->UnregisterTabSpawner(OutlineTabId);
 }
 
 void FMarkdownAssetEditorToolkit::Initialize(UMarkdownAsset* InMarkdownAsset, const EToolkitMode::Type Mode, const TSharedPtr<class IToolkitHost>& InitToolkitHost)
@@ -344,15 +353,21 @@ void FMarkdownAssetEditorToolkit::Initialize(UMarkdownAsset* InMarkdownAsset, co
 	FMarkdownEditorCommands::Register();
 	BindCommands();
 
-	// Create the layout
-	TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Standalone_MarkdownAssetEditor_Layout_v1")
+	// Create the layout (v2 adds the outline panel to the left of the main editor)
+	TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Standalone_MarkdownAssetEditor_Layout_v2")
 		->AddArea
 		(
-			FTabManager::NewPrimaryArea()->SetOrientation(Orient_Vertical)
+			FTabManager::NewPrimaryArea()->SetOrientation(Orient_Horizontal)
 			->Split
 			(
 				FTabManager::NewStack()
-				->SetSizeCoefficient(1.0f)
+				->SetSizeCoefficient(0.18f)
+				->AddTab(OutlineTabId, ETabState::OpenedTab)
+			)
+			->Split
+			(
+				FTabManager::NewStack()
+				->SetSizeCoefficient(0.82f)
 				->SetHideTabWell(true)
 				->AddTab(MainTabId, ETabState::OpenedTab)
 			)
@@ -420,10 +435,13 @@ void FMarkdownAssetEditorToolkit::OnTextChanged(const FText& NewText)
 
 void FMarkdownAssetEditorToolkit::UpdatePreview()
 {
+	RebuildOutline();
+
 	if (MarkdownAsset && WebBrowserWidget.IsValid())
 	{
 		FString ParsedHtml = MarkdownAsset->GetParsedHTML();
 		ParsedHtml = MarkBrokenLinks(ParsedHtml);
+		ParsedHtml = MarkdownOutline::InjectHeadingAnchors(ParsedHtml);
 
 		FString StyledHtml = GenerateStyledHtml(ParsedHtml);
 
@@ -722,6 +740,101 @@ TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabA
 	}
 
 	return SpawnedTab;
+}
+
+// ---- Outline Panel ----
+
+TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Outline(const FSpawnTabArgs& Args)
+{
+	TSharedRef<SDockTab> SpawnedTab = SNew(SDockTab)
+		.Label(LOCTEXT("OutlineTabLabel", "Outline"))
+		[
+			SAssignNew(OutlineListView, SListView<TSharedPtr<FMarkdownHeading>>)
+			.ListItemsSource(&OutlineItems)
+			.SelectionMode(ESelectionMode::Single)
+			.OnGenerateRow(this, &FMarkdownAssetEditorToolkit::OnGenerateOutlineRow)
+			.OnMouseButtonClick(this, &FMarkdownAssetEditorToolkit::OnOutlineItemClicked)
+		];
+
+	RebuildOutline();
+
+	return SpawnedTab;
+}
+
+void FMarkdownAssetEditorToolkit::RebuildOutline()
+{
+	OutlineItems.Reset();
+
+	if (MarkdownAsset)
+	{
+		for (const FMarkdownHeading& Heading : MarkdownOutline::ExtractHeadings(MarkdownAsset->RawMarkdownText))
+		{
+			OutlineItems.Add(MakeShared<FMarkdownHeading>(Heading));
+		}
+	}
+
+	if (OutlineListView.IsValid())
+	{
+		OutlineListView->RequestListRefresh();
+	}
+}
+
+TSharedRef<ITableRow> FMarkdownAssetEditorToolkit::OnGenerateOutlineRow(TSharedPtr<FMarkdownHeading> Item, const TSharedRef<STableViewBase>& OwnerTable)
+{
+	const int32 Level = Item.IsValid() ? Item->Level : 1;
+	const FString Label = (Item.IsValid() && !Item->Text.IsEmpty())
+		? Item->Text
+		: LOCTEXT("OutlineUntitledHeading", "(untitled)").ToString();
+
+	return SNew(STableRow<TSharedPtr<FMarkdownHeading>>, OwnerTable)
+		[
+			SNew(SBox)
+			.Padding(FMargin(4.0f + (Level - 1) * 12.0f, 2.0f, 4.0f, 2.0f))
+			[
+				SNew(STextBlock)
+				.Text(FText::FromString(Label))
+				.ToolTipText(Item.IsValid()
+					? FText::Format(LOCTEXT("OutlineItemTooltip", "H{0} - Line {1}"), Item->Level, Item->LineIndex + 1)
+					: FText::GetEmpty())
+				.Font(FCoreStyle::GetDefaultFontStyle(Level <= 2 ? "Bold" : "Regular", 9))
+			]
+		];
+}
+
+void FMarkdownAssetEditorToolkit::OnOutlineItemClicked(TSharedPtr<FMarkdownHeading> Item)
+{
+	if (!Item.IsValid())
+	{
+		return;
+	}
+
+	// Jump the text editor to the heading's line. The outline can lag the text by
+	// the preview debounce, so clamp the line index to the current line count.
+	if (EditableTextBox.IsValid())
+	{
+		const FString CurrentText = EditableTextBox->GetText().ToString();
+		int32 LineCount = 1;
+		for (const TCHAR Char : CurrentText)
+		{
+			if (Char == TEXT('\n'))
+			{
+				++LineCount;
+			}
+		}
+
+		const FTextLocation Location(FMath::Clamp(Item->LineIndex, 0, LineCount - 1), 0);
+		EditableTextBox->GoTo(Location);
+		EditableTextBox->ScrollTo(Location);
+		FSlateApplication::Get().SetKeyboardFocus(EditableTextBox);
+	}
+
+	// Scroll the HTML preview to the matching heading anchor.
+	if (WebBrowserWidget.IsValid())
+	{
+		WebBrowserWidget->ExecuteJavascript(FString::Printf(
+			TEXT("(function(){var e=document.getElementById('md-h-%d');if(e){e.scrollIntoView({behavior:'smooth',block:'start'});}})();"),
+			Item->HeadingIndex));
+	}
 }
 
 // ---- Wikilink Navigation ----

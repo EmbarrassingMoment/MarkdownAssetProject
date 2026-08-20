@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Outline Panel** — New dockable "Outline" tab in the Markdown editor listing every heading (H1–H6, including setext headings and headings inside blockquotes) as an indented list. Fenced and indented code blocks are excluded. The outline refreshes together with the debounced preview update
+- **Heading Navigation** — Clicking an outline entry moves the text editor cursor to the heading's line and scrolls the HTML preview to the matching heading via injected `id` anchors and `scrollIntoView`
+
 ## [1.3.0] - 2026-06-09
 
 ### Added

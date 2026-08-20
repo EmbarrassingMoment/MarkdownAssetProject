@@ -16,6 +16,7 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 
 - **Custom Markdown Asset** — `UMarkdownAsset` stores raw Markdown text as a first-class UObject
 - **Live HTML Preview** — Dual-pane editor with a text editor on the left and a real-time HTML preview on the right (updates with a 0.3-second debounce for smooth editing)
+- **Outline Panel** — A docked panel listing every heading (H1–H6) in the document as an indented tree; clicking an entry jumps both the text editor and the HTML preview to that heading
 - **md4c Integration** — Fast Markdown-to-HTML conversion powered by the embedded [md4c](https://github.com/mity/md4c) C library
 - **Dark Theme** — Styled HTML output with a dark background for comfortable reading
 - **Content Browser Integration** — Create new Markdown assets directly from the context menu, with custom thumbnail previews showing the "MD" label and the first few lines of content
