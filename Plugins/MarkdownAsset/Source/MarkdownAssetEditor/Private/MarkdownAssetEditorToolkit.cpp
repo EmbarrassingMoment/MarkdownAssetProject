@@ -3,6 +3,7 @@
 #include "MarkdownAssetEditorToolkit.h"
 #include "MarkdownAsset.h"
 #include "MarkdownOutline.h"
+#include "MarkdownPreviewUtils.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/Docking/SDockTab.h"
 #include "Widgets/Input/SMultiLineEditableTextBox.h"
@@ -38,75 +39,6 @@
 #define LOCTEXT_NAMESPACE "MarkdownAssetEditor"
 
 DEFINE_LOG_CATEGORY_STATIC(LogMarkdownAssetEditor, Log, All);
-
-/** Decodes a percent-encoded URI string back to a regular FString. */
-static FString PercentDecode(const FString& Input)
-{
-	TArray<uint8> Bytes;
-	Bytes.Reserve(Input.Len());
-
-	for (int32 i = 0; i < Input.Len(); ++i)
-	{
-		if (Input[i] == TEXT('%') && i + 2 < Input.Len())
-		{
-			FString HexStr = Input.Mid(i + 1, 2);
-			uint8 Value = static_cast<uint8>(FCString::Strtoi(*HexStr, nullptr, 16));
-			Bytes.Add(Value);
-			i += 2;
-		}
-		else if (Input[i] == TEXT('+'))
-		{
-			Bytes.Add(static_cast<uint8>(' '));
-		}
-		else
-		{
-			// ASCII range character
-			Bytes.Add(static_cast<uint8>(Input[i] & 0xFF));
-		}
-	}
-
-	FUTF8ToTCHAR Converter(reinterpret_cast<const ANSICHAR*>(Bytes.GetData()), Bytes.Num());
-	return FString(Converter.Length(), Converter.Get());
-}
-
-// ---- Styled HTML Generation ----
-
-/**
- * Wraps the parsed HTML content in a full HTML document with dark-themed CSS styling.
- */
-static FString GenerateStyledHtml(const FString& ParsedHtml)
-{
-	return FString::Printf(TEXT(
-		"<!DOCTYPE html>\n"
-		"<html><head>\n"
-		"<meta charset=\"utf-8\">\n"
-		"<meta http-equiv=\"Content-Security-Policy\""
-		" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src data:;\">\n"
-		"<style>\n"
-		"body { font-family: 'Segoe UI', 'Meiryo', 'Yu Gothic', sans-serif; background-color: #1e1e1e; color: #cccccc; padding: 20px; }\n"
-		"h1, h2, h3, h4, h5, h6 { color: #ffffff; border-bottom: 1px solid #444; padding-bottom: 5px; }\n"
-		"code { background-color: #2d2d2d; padding: 2px 4px; border-radius: 4px; }\n"
-		"pre { background-color: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }\n"
-		"a { color: #3794ff; }\n"
-		"table { border-collapse: collapse; width: 100%%; margin-bottom: 20px; }\n"
-		"th, td { border: 1px solid #444; padding: 8px 12px; text-align: left; }\n"
-		"th { background-color: #333; color: #fff; font-weight: bold; }\n"
-		"tr:nth-child(even) { background-color: #2a2a2a; }\n"
-		"blockquote { border-left: 4px solid #3794ff; margin: 10px 0; padding: 5px 15px; background-color: #252525; }\n"
-		"hr { border: none; border-top: 1px solid #444; margin: 20px 0; }\n"
-		"img { max-width: 100%%; height: auto; }\n"
-		"del { color: #888; }\n"
-"a[href^=\"mdasset://\"] { color: #4ec9b0; text-decoration: none; border-bottom: 1px dashed #4ec9b0; cursor: pointer; }\n"
-"a[href^=\"mdasset://\"]:hover { color: #6fe0c8; border-bottom-style: solid; }\n"
-"a[href^=\"ueasset://\"] { color: #dcdcaa; text-decoration: none; border-bottom: 1px dashed #dcdcaa; cursor: pointer; }\n"
-"a[href^=\"ueasset://\"]:hover { color: #f1e9a6; border-bottom-style: solid; }\n"
-"a[href^=\"class://\"] { color: #c586c0; text-decoration: none; border-bottom: 1px dashed #c586c0; cursor: pointer; }\n"
-"a[href^=\"class://\"]:hover { color: #d7a7d2; border-bottom-style: solid; }\n"
-"a.md-broken-link { color: #f44747; border-bottom-color: #f44747; }\n"
-"a.md-broken-link:hover { color: #ff6b6b; }\n"
-		"</style></head><body>\n%s\n</body></html>"
-	), *ParsedHtml);
-}
 
 /**
  * Builds reflection-name candidates to try when resolving a user-supplied class name.
@@ -248,7 +180,7 @@ static FString MarkBrokenLinks(const FString& Html)
 
 		const FString Scheme = Matcher.GetCaptureGroup(1);
 		const FString EncodedTarget = Matcher.GetCaptureGroup(2);
-		const FString DecodedTarget = PercentDecode(EncodedTarget);
+		const FString DecodedTarget = MarkdownPreviewUtils::PercentDecode(EncodedTarget);
 
 		bool bTargetExists = false;
 		if (Scheme == TEXT("mdasset"))
@@ -443,7 +375,7 @@ void FMarkdownAssetEditorToolkit::UpdatePreview()
 		ParsedHtml = MarkBrokenLinks(ParsedHtml);
 		ParsedHtml = MarkdownOutline::InjectHeadingAnchors(ParsedHtml);
 
-		FString StyledHtml = GenerateStyledHtml(ParsedHtml);
+		FString StyledHtml = MarkdownPreviewUtils::GenerateStyledHtml(ParsedHtml);
 
 		// Explicitly convert FString (UTF-16) to UTF-8 bytes before Base64 encoding
 		FTCHARToUTF8 Utf8Html(*StyledHtml);
@@ -841,43 +773,34 @@ void FMarkdownAssetEditorToolkit::OnOutlineItemClicked(TSharedPtr<FMarkdownHeadi
 
 bool FMarkdownAssetEditorToolkit::HandleBeforeNavigation(const FString& Url, const FWebNavigationRequest& Request)
 {
-	// Allow data: URLs for preview loading, and about:blank used by CEF during init.
-	if (Url.StartsWith(TEXT("data:")) || Url.StartsWith(TEXT("about:")))
+	using namespace MarkdownPreviewUtils;
+
+	FString Payload;
+	switch (ClassifyPreviewUrl(Url, &Payload))
 	{
+	// data: URLs for preview loading, and about:blank used by CEF during init.
+	case EPreviewUrlAction::AllowInPage:
 		return false;
-	}
 
-	// Handle mdasset:// scheme for wikilinks
-	static const FString MdAssetScheme = TEXT("mdasset://");
-	if (Url.StartsWith(MdAssetScheme))
-	{
-		FString AssetName = PercentDecode(Url.Mid(MdAssetScheme.Len()));
-		OpenLinkedMarkdownAsset(AssetName);
+	// mdasset:// scheme for wikilinks
+	case EPreviewUrlAction::OpenMarkdownAsset:
+		OpenLinkedMarkdownAsset(Payload);
 		return true;
-	}
 
-	// Handle ueasset:// scheme for Content Browser asset / Blueprint object paths
-	static const FString UEAssetScheme = TEXT("ueasset://");
-	if (Url.StartsWith(UEAssetScheme))
-	{
-		FString ObjectPath = PercentDecode(Url.Mid(UEAssetScheme.Len()));
-		OpenLinkedUnrealAsset(ObjectPath);
+	// ueasset:// scheme for Content Browser asset / Blueprint object paths
+	case EPreviewUrlAction::OpenUnrealAsset:
+		OpenLinkedUnrealAsset(Payload);
 		return true;
-	}
 
-	// Handle class:// scheme for C++ or Blueprint class references
-	static const FString ClassScheme = TEXT("class://");
-	if (Url.StartsWith(ClassScheme))
-	{
-		FString ClassName = PercentDecode(Url.Mid(ClassScheme.Len()));
-		OpenLinkedClass(ClassName);
+	// class:// scheme for C++ or Blueprint class references
+	case EPreviewUrlAction::OpenClass:
+		OpenLinkedClass(Payload);
 		return true;
-	}
 
 	// Open external URLs in the system browser after user confirmation.
 	// The preview has no address bar, so we always prompt with the full URL
 	// to let the user inspect it before launching (phishing mitigation).
-	if (Url.StartsWith(TEXT("http://")) || Url.StartsWith(TEXT("https://")))
+	case EPreviewUrlAction::PromptExternal:
 	{
 		const FText Prompt = LOCTEXT("ConfirmExternalUrlMessage", "Open this URL in your default browser?");
 		const FText Message = FText::FromString(
@@ -897,8 +820,11 @@ bool FMarkdownAssetEditorToolkit::HandleBeforeNavigation(const FString& Url, con
 
 	// Default-deny: block unknown schemes (javascript:, file:, vbscript:, etc.)
 	// to prevent script execution or local-file access from untrusted Markdown.
-	UE_LOG(LogMarkdownAssetEditor, Warning, TEXT("Blocked navigation to unsupported URL: '%s'"), *Url);
-	return true;
+	case EPreviewUrlAction::Block:
+	default:
+		UE_LOG(LogMarkdownAssetEditor, Warning, TEXT("Blocked navigation to unsupported URL: '%s'"), *Url);
+		return true;
+	}
 }
 
 void FMarkdownAssetEditorToolkit::OpenLinkedMarkdownAsset(const FString& AssetName)

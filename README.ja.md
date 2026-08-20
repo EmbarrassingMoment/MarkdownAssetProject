@@ -193,6 +193,17 @@ A. はい。任意の `.md` または `.markdown` ファイルをコンテンツ
 **Q. WebBrowserWidget プラグインは必須ですか？**
 A. はい。カスタムエディタでライブHTMLプレビューを描画するには、エンジン組み込みの WebBrowserWidget プラグインが必要です。このプラグインが自動的に有効化します。
 
+## テスト
+
+本プラグインには Automation テスト（エディタモジュール内、カテゴリ `MarkdownAsset.*`）が含まれており、Markdown→HTML 変換、Wikilink / アセットリンクの書き換え、アウトライン抽出、およびプレビューのセキュリティ許可リストと Content-Security-Policy を検証します。
+
+- **エディタ内で実行**: **Tools > Session Frontend > Automation** を開き、`MarkdownAsset` でフィルタしてチェックしたテストを実行します。
+- **コマンドラインから実行**:
+
+  ```
+  UnrealEditor-Cmd.exe <Project>.uproject -ExecCmds="Automation RunTests MarkdownAsset; Quit" -unattended -nopause -nosplash -log
+  ```
+
 ## ライセンス
 
 このプロジェクトは [MIT License](LICENSE) の下でライセンスされています。

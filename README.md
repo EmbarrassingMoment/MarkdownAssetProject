@@ -193,6 +193,17 @@ A. Yes. You can import any `.md` or `.markdown` file into the Content Browser. I
 **Q. Is the WebBrowserWidget plugin required?**
 A. Yes. The Engine's built-in WebBrowserWidget plugin is required to render the live HTML preview in the custom editor. This plugin will automatically enable it for you.
 
+## Testing
+
+The plugin ships with automation tests (editor module, `MarkdownAsset.*` categories) covering Markdown-to-HTML conversion, wikilink / asset link rewriting, outline extraction, and the preview's security allowlist and Content-Security-Policy.
+
+- **In the editor**: **Tools > Session Frontend > Automation**, filter by `MarkdownAsset`, and run the checked tests.
+- **From the command line**:
+
+  ```
+  UnrealEditor-Cmd.exe <Project>.uproject -ExecCmds="Automation RunTests MarkdownAsset; Quit" -unattended -nopause -nosplash -log
+  ```
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).

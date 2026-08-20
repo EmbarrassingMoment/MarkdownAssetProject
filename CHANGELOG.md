@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - **Outline Panel** — New dockable "Outline" tab in the Markdown editor listing every heading (H1–H6, including setext headings and headings inside blockquotes) as an indented list. Fenced and indented code blocks are excluded. The outline refreshes together with the debounced preview update
 - **Heading Navigation** — Clicking an outline entry moves the text editor cursor to the heading's line and scrolls the HTML preview to the matching heading via injected `id` anchors and `scrollIntoView`
+- **Automation Tests** — New test suite (`MarkdownAsset.*` in the editor module) covering Markdown-to-HTML conversion (GFM extensions, raw-HTML escaping, wikilink and asset/class link rewriting), plain-text extraction, outline heading extraction and preview anchor alignment, the preview URL scheme allowlist (default-deny regression guard for `javascript:` / `file:` etc.), percent-decoding, and the Content-Security-Policy in the styled preview HTML
+
+### Changed
+
+- **Preview security helpers extracted** — The preview navigation scheme allowlist, percent-decoding, and styled-HTML/CSP generation moved from static functions inside the editor toolkit into the `MarkdownPreviewUtils` namespace (`MarkdownPreviewUtils.h/.cpp`) so they can be unit-tested; runtime behavior is unchanged
 
 ## [1.3.0] - 2026-06-09
 
