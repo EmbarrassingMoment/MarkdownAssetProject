@@ -8,11 +8,15 @@
 #include "Editor.h"
 #include "Framework/Commands/Commands.h"
 #include "Framework/Commands/UICommandList.h"
+#include "Widgets/Views/SListView.h"
+#include "MarkdownOutline.h"
 
 class UMarkdownAsset;
 class SMultiLineEditableTextBox;
 class SWebBrowser;
 struct FWebNavigationRequest;
+class ITableRow;
+class STableViewBase;
 
 /**
  * UI Commands for the Markdown editor toolbar and keyboard shortcuts.
@@ -94,6 +98,18 @@ private:
 	/** Spawns the main editor tab containing the text editor and HTML preview. */
 	TSharedRef<SDockTab> SpawnTab_Main(const FSpawnTabArgs& Args);
 
+	/** Spawns the outline tab listing the document's headings. */
+	TSharedRef<SDockTab> SpawnTab_Outline(const FSpawnTabArgs& Args);
+
+	/** Re-extracts headings from the current Markdown text and refreshes the outline list. */
+	void RebuildOutline();
+
+	/** Creates the row widget for a single outline entry. */
+	TSharedRef<ITableRow> OnGenerateOutlineRow(TSharedPtr<FMarkdownHeading> Item, const TSharedRef<STableViewBase>& OwnerTable);
+
+	/** Jumps the text editor and the HTML preview to the clicked heading. */
+	void OnOutlineItemClicked(TSharedPtr<FMarkdownHeading> Item);
+
 	/** Registers the formatting toolbar extension. */
 	void RegisterToolbar();
 
@@ -165,8 +181,15 @@ private:
 	/** The command list that maps UI commands to formatting actions. */
 	TSharedPtr<FUICommandList> ToolkitCommands;
 
+	/** Headings currently shown in the outline panel. */
+	TArray<TSharedPtr<FMarkdownHeading>> OutlineItems;
+	/** The list view widget backing the outline panel. */
+	TSharedPtr<SListView<TSharedPtr<FMarkdownHeading>>> OutlineListView;
+
 	/** Unique identifier for this editor application. */
 	static const FName AppIdentifier;
 	/** Tab ID for the main editor tab. */
 	static const FName MainTabId;
+	/** Tab ID for the outline tab. */
+	static const FName OutlineTabId;
 };

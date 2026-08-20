@@ -2,8 +2,12 @@
 
 #include "MarkdownAssetEditorToolkit.h"
 #include "MarkdownAsset.h"
+#include "MarkdownOutline.h"
+#include "MarkdownPreviewUtils.h"
+#include "Framework/Application/SlateApplication.h"
 #include "Widgets/Docking/SDockTab.h"
 #include "Widgets/Input/SMultiLineEditableTextBox.h"
+#include "Widgets/Views/STableRow.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Text/STextBlock.h"
 #include "Widgets/Text/SRichTextBlock.h"
@@ -35,75 +39,6 @@
 #define LOCTEXT_NAMESPACE "MarkdownAssetEditor"
 
 DEFINE_LOG_CATEGORY_STATIC(LogMarkdownAssetEditor, Log, All);
-
-/** Decodes a percent-encoded URI string back to a regular FString. */
-static FString PercentDecode(const FString& Input)
-{
-	TArray<uint8> Bytes;
-	Bytes.Reserve(Input.Len());
-
-	for (int32 i = 0; i < Input.Len(); ++i)
-	{
-		if (Input[i] == TEXT('%') && i + 2 < Input.Len())
-		{
-			FString HexStr = Input.Mid(i + 1, 2);
-			uint8 Value = static_cast<uint8>(FCString::Strtoi(*HexStr, nullptr, 16));
-			Bytes.Add(Value);
-			i += 2;
-		}
-		else if (Input[i] == TEXT('+'))
-		{
-			Bytes.Add(static_cast<uint8>(' '));
-		}
-		else
-		{
-			// ASCII range character
-			Bytes.Add(static_cast<uint8>(Input[i] & 0xFF));
-		}
-	}
-
-	FUTF8ToTCHAR Converter(reinterpret_cast<const ANSICHAR*>(Bytes.GetData()), Bytes.Num());
-	return FString(Converter.Length(), Converter.Get());
-}
-
-// ---- Styled HTML Generation ----
-
-/**
- * Wraps the parsed HTML content in a full HTML document with dark-themed CSS styling.
- */
-static FString GenerateStyledHtml(const FString& ParsedHtml)
-{
-	return FString::Printf(TEXT(
-		"<!DOCTYPE html>\n"
-		"<html><head>\n"
-		"<meta charset=\"utf-8\">\n"
-		"<meta http-equiv=\"Content-Security-Policy\""
-		" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src data:;\">\n"
-		"<style>\n"
-		"body { font-family: 'Segoe UI', 'Meiryo', 'Yu Gothic', sans-serif; background-color: #1e1e1e; color: #cccccc; padding: 20px; }\n"
-		"h1, h2, h3, h4, h5, h6 { color: #ffffff; border-bottom: 1px solid #444; padding-bottom: 5px; }\n"
-		"code { background-color: #2d2d2d; padding: 2px 4px; border-radius: 4px; }\n"
-		"pre { background-color: #2d2d2d; padding: 10px; border-radius: 4px; overflow-x: auto; }\n"
-		"a { color: #3794ff; }\n"
-		"table { border-collapse: collapse; width: 100%%; margin-bottom: 20px; }\n"
-		"th, td { border: 1px solid #444; padding: 8px 12px; text-align: left; }\n"
-		"th { background-color: #333; color: #fff; font-weight: bold; }\n"
-		"tr:nth-child(even) { background-color: #2a2a2a; }\n"
-		"blockquote { border-left: 4px solid #3794ff; margin: 10px 0; padding: 5px 15px; background-color: #252525; }\n"
-		"hr { border: none; border-top: 1px solid #444; margin: 20px 0; }\n"
-		"img { max-width: 100%%; height: auto; }\n"
-		"del { color: #888; }\n"
-"a[href^=\"mdasset://\"] { color: #4ec9b0; text-decoration: none; border-bottom: 1px dashed #4ec9b0; cursor: pointer; }\n"
-"a[href^=\"mdasset://\"]:hover { color: #6fe0c8; border-bottom-style: solid; }\n"
-"a[href^=\"ueasset://\"] { color: #dcdcaa; text-decoration: none; border-bottom: 1px dashed #dcdcaa; cursor: pointer; }\n"
-"a[href^=\"ueasset://\"]:hover { color: #f1e9a6; border-bottom-style: solid; }\n"
-"a[href^=\"class://\"] { color: #c586c0; text-decoration: none; border-bottom: 1px dashed #c586c0; cursor: pointer; }\n"
-"a[href^=\"class://\"]:hover { color: #d7a7d2; border-bottom-style: solid; }\n"
-"a.md-broken-link { color: #f44747; border-bottom-color: #f44747; }\n"
-"a.md-broken-link:hover { color: #ff6b6b; }\n"
-		"</style></head><body>\n%s\n</body></html>"
-	), *ParsedHtml);
-}
 
 /**
  * Builds reflection-name candidates to try when resolving a user-supplied class name.
@@ -245,7 +180,7 @@ static FString MarkBrokenLinks(const FString& Html)
 
 		const FString Scheme = Matcher.GetCaptureGroup(1);
 		const FString EncodedTarget = Matcher.GetCaptureGroup(2);
-		const FString DecodedTarget = PercentDecode(EncodedTarget);
+		const FString DecodedTarget = MarkdownPreviewUtils::PercentDecode(EncodedTarget);
 
 		bool bTargetExists = false;
 		if (Scheme == TEXT("mdasset"))
@@ -309,6 +244,7 @@ void FMarkdownEditorCommands::RegisterCommands()
 
 const FName FMarkdownAssetEditorToolkit::AppIdentifier(TEXT("MarkdownAssetEditorApp"));
 const FName FMarkdownAssetEditorToolkit::MainTabId(TEXT("MarkdownAssetEditor_MainTab"));
+const FName FMarkdownAssetEditorToolkit::OutlineTabId(TEXT("MarkdownAssetEditor_OutlineTab"));
 
 FMarkdownAssetEditorToolkit::~FMarkdownAssetEditorToolkit()
 {
@@ -329,12 +265,17 @@ void FMarkdownAssetEditorToolkit::RegisterTabSpawners(const TSharedRef<class FTa
 	InTabManager->RegisterTabSpawner(MainTabId, FOnSpawnTab::CreateSP(this, &FMarkdownAssetEditorToolkit::SpawnTab_Main))
 		.SetDisplayName(LOCTEXT("MainTab", "Markdown Editor"))
 		.SetGroup(WorkspaceMenuCategory.ToSharedRef());
+
+	InTabManager->RegisterTabSpawner(OutlineTabId, FOnSpawnTab::CreateSP(this, &FMarkdownAssetEditorToolkit::SpawnTab_Outline))
+		.SetDisplayName(LOCTEXT("OutlineTab", "Outline"))
+		.SetGroup(WorkspaceMenuCategory.ToSharedRef());
 }
 
 void FMarkdownAssetEditorToolkit::UnregisterTabSpawners(const TSharedRef<class FTabManager>& InTabManager)
 {
 	FAssetEditorToolkit::UnregisterTabSpawners(InTabManager);
 	InTabManager->UnregisterTabSpawner(MainTabId);
+	InTabManager->UnregisterTabSpawner(OutlineTabId);
 }
 
 void FMarkdownAssetEditorToolkit::Initialize(UMarkdownAsset* InMarkdownAsset, const EToolkitMode::Type Mode, const TSharedPtr<class IToolkitHost>& InitToolkitHost)
@@ -344,15 +285,21 @@ void FMarkdownAssetEditorToolkit::Initialize(UMarkdownAsset* InMarkdownAsset, co
 	FMarkdownEditorCommands::Register();
 	BindCommands();
 
-	// Create the layout
-	TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Standalone_MarkdownAssetEditor_Layout_v1")
+	// Create the layout (v2 adds the outline panel to the left of the main editor)
+	TSharedRef<FTabManager::FLayout> StandaloneDefaultLayout = FTabManager::NewLayout("Standalone_MarkdownAssetEditor_Layout_v2")
 		->AddArea
 		(
-			FTabManager::NewPrimaryArea()->SetOrientation(Orient_Vertical)
+			FTabManager::NewPrimaryArea()->SetOrientation(Orient_Horizontal)
 			->Split
 			(
 				FTabManager::NewStack()
-				->SetSizeCoefficient(1.0f)
+				->SetSizeCoefficient(0.18f)
+				->AddTab(OutlineTabId, ETabState::OpenedTab)
+			)
+			->Split
+			(
+				FTabManager::NewStack()
+				->SetSizeCoefficient(0.82f)
 				->SetHideTabWell(true)
 				->AddTab(MainTabId, ETabState::OpenedTab)
 			)
@@ -420,12 +367,15 @@ void FMarkdownAssetEditorToolkit::OnTextChanged(const FText& NewText)
 
 void FMarkdownAssetEditorToolkit::UpdatePreview()
 {
+	RebuildOutline();
+
 	if (MarkdownAsset && WebBrowserWidget.IsValid())
 	{
 		FString ParsedHtml = MarkdownAsset->GetParsedHTML();
 		ParsedHtml = MarkBrokenLinks(ParsedHtml);
+		ParsedHtml = MarkdownOutline::InjectHeadingAnchors(ParsedHtml);
 
-		FString StyledHtml = GenerateStyledHtml(ParsedHtml);
+		FString StyledHtml = MarkdownPreviewUtils::GenerateStyledHtml(ParsedHtml);
 
 		// Explicitly convert FString (UTF-16) to UTF-8 bytes before Base64 encoding
 		FTCHARToUTF8 Utf8Html(*StyledHtml);
@@ -724,47 +674,133 @@ TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabA
 	return SpawnedTab;
 }
 
+// ---- Outline Panel ----
+
+TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Outline(const FSpawnTabArgs& Args)
+{
+	TSharedRef<SDockTab> SpawnedTab = SNew(SDockTab)
+		.Label(LOCTEXT("OutlineTabLabel", "Outline"))
+		[
+			SAssignNew(OutlineListView, SListView<TSharedPtr<FMarkdownHeading>>)
+			.ListItemsSource(&OutlineItems)
+			.SelectionMode(ESelectionMode::Single)
+			.OnGenerateRow(this, &FMarkdownAssetEditorToolkit::OnGenerateOutlineRow)
+			.OnMouseButtonClick(this, &FMarkdownAssetEditorToolkit::OnOutlineItemClicked)
+		];
+
+	RebuildOutline();
+
+	return SpawnedTab;
+}
+
+void FMarkdownAssetEditorToolkit::RebuildOutline()
+{
+	OutlineItems.Reset();
+
+	if (MarkdownAsset)
+	{
+		for (const FMarkdownHeading& Heading : MarkdownOutline::ExtractHeadings(MarkdownAsset->RawMarkdownText))
+		{
+			OutlineItems.Add(MakeShared<FMarkdownHeading>(Heading));
+		}
+	}
+
+	if (OutlineListView.IsValid())
+	{
+		OutlineListView->RequestListRefresh();
+	}
+}
+
+TSharedRef<ITableRow> FMarkdownAssetEditorToolkit::OnGenerateOutlineRow(TSharedPtr<FMarkdownHeading> Item, const TSharedRef<STableViewBase>& OwnerTable)
+{
+	const int32 Level = Item.IsValid() ? Item->Level : 1;
+	const FString Label = (Item.IsValid() && !Item->Text.IsEmpty())
+		? Item->Text
+		: LOCTEXT("OutlineUntitledHeading", "(untitled)").ToString();
+
+	return SNew(STableRow<TSharedPtr<FMarkdownHeading>>, OwnerTable)
+		[
+			SNew(SBox)
+			.Padding(FMargin(4.0f + (Level - 1) * 12.0f, 2.0f, 4.0f, 2.0f))
+			[
+				SNew(STextBlock)
+				.Text(FText::FromString(Label))
+				.ToolTipText(Item.IsValid()
+					? FText::Format(LOCTEXT("OutlineItemTooltip", "H{0} - Line {1}"), Item->Level, Item->LineIndex + 1)
+					: FText::GetEmpty())
+				.Font(FCoreStyle::GetDefaultFontStyle(Level <= 2 ? "Bold" : "Regular", 9))
+			]
+		];
+}
+
+void FMarkdownAssetEditorToolkit::OnOutlineItemClicked(TSharedPtr<FMarkdownHeading> Item)
+{
+	if (!Item.IsValid())
+	{
+		return;
+	}
+
+	// Jump the text editor to the heading's line. The outline can lag the text by
+	// the preview debounce, so clamp the line index to the current line count.
+	if (EditableTextBox.IsValid())
+	{
+		const FString CurrentText = EditableTextBox->GetText().ToString();
+		int32 LineCount = 1;
+		for (const TCHAR Char : CurrentText)
+		{
+			if (Char == TEXT('\n'))
+			{
+				++LineCount;
+			}
+		}
+
+		const FTextLocation Location(FMath::Clamp(Item->LineIndex, 0, LineCount - 1), 0);
+		EditableTextBox->GoTo(Location);
+		EditableTextBox->ScrollTo(Location);
+		FSlateApplication::Get().SetKeyboardFocus(EditableTextBox);
+	}
+
+	// Scroll the HTML preview to the matching heading anchor.
+	if (WebBrowserWidget.IsValid())
+	{
+		WebBrowserWidget->ExecuteJavascript(FString::Printf(
+			TEXT("(function(){var e=document.getElementById('md-h-%d');if(e){e.scrollIntoView({behavior:'smooth',block:'start'});}})();"),
+			Item->HeadingIndex));
+	}
+}
+
 // ---- Wikilink Navigation ----
 
 bool FMarkdownAssetEditorToolkit::HandleBeforeNavigation(const FString& Url, const FWebNavigationRequest& Request)
 {
-	// Allow data: URLs for preview loading, and about:blank used by CEF during init.
-	if (Url.StartsWith(TEXT("data:")) || Url.StartsWith(TEXT("about:")))
+	using namespace MarkdownPreviewUtils;
+
+	FString Payload;
+	switch (ClassifyPreviewUrl(Url, &Payload))
 	{
+	// data: URLs for preview loading, and about:blank used by CEF during init.
+	case EPreviewUrlAction::AllowInPage:
 		return false;
-	}
 
-	// Handle mdasset:// scheme for wikilinks
-	static const FString MdAssetScheme = TEXT("mdasset://");
-	if (Url.StartsWith(MdAssetScheme))
-	{
-		FString AssetName = PercentDecode(Url.Mid(MdAssetScheme.Len()));
-		OpenLinkedMarkdownAsset(AssetName);
+	// mdasset:// scheme for wikilinks
+	case EPreviewUrlAction::OpenMarkdownAsset:
+		OpenLinkedMarkdownAsset(Payload);
 		return true;
-	}
 
-	// Handle ueasset:// scheme for Content Browser asset / Blueprint object paths
-	static const FString UEAssetScheme = TEXT("ueasset://");
-	if (Url.StartsWith(UEAssetScheme))
-	{
-		FString ObjectPath = PercentDecode(Url.Mid(UEAssetScheme.Len()));
-		OpenLinkedUnrealAsset(ObjectPath);
+	// ueasset:// scheme for Content Browser asset / Blueprint object paths
+	case EPreviewUrlAction::OpenUnrealAsset:
+		OpenLinkedUnrealAsset(Payload);
 		return true;
-	}
 
-	// Handle class:// scheme for C++ or Blueprint class references
-	static const FString ClassScheme = TEXT("class://");
-	if (Url.StartsWith(ClassScheme))
-	{
-		FString ClassName = PercentDecode(Url.Mid(ClassScheme.Len()));
-		OpenLinkedClass(ClassName);
+	// class:// scheme for C++ or Blueprint class references
+	case EPreviewUrlAction::OpenClass:
+		OpenLinkedClass(Payload);
 		return true;
-	}
 
 	// Open external URLs in the system browser after user confirmation.
 	// The preview has no address bar, so we always prompt with the full URL
 	// to let the user inspect it before launching (phishing mitigation).
-	if (Url.StartsWith(TEXT("http://")) || Url.StartsWith(TEXT("https://")))
+	case EPreviewUrlAction::PromptExternal:
 	{
 		const FText Prompt = LOCTEXT("ConfirmExternalUrlMessage", "Open this URL in your default browser?");
 		const FText Message = FText::FromString(
@@ -784,8 +820,11 @@ bool FMarkdownAssetEditorToolkit::HandleBeforeNavigation(const FString& Url, con
 
 	// Default-deny: block unknown schemes (javascript:, file:, vbscript:, etc.)
 	// to prevent script execution or local-file access from untrusted Markdown.
-	UE_LOG(LogMarkdownAssetEditor, Warning, TEXT("Blocked navigation to unsupported URL: '%s'"), *Url);
-	return true;
+	case EPreviewUrlAction::Block:
+	default:
+		UE_LOG(LogMarkdownAssetEditor, Warning, TEXT("Blocked navigation to unsupported URL: '%s'"), *Url);
+		return true;
+	}
 }
 
 void FMarkdownAssetEditorToolkit::OpenLinkedMarkdownAsset(const FString& AssetName)
