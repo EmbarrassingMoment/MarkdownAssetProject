@@ -30,7 +30,7 @@
 - **元に戻す / やり直し** — Unreal Editorのトランザクションシステムと統合された完全なUndo/Redoサポート（Ctrl+Z / Ctrl+Y）
 - **セキュリティ** — ユーザー提供のMarkdownレンダリング時のXSSを防止するため、生のHTMLブロックおよびインラインHTMLはデフォルトで無効化しています。また、プレビューブラウザのナビゲーションはホワイトリスト方式を採用しており、`data:`・`about:`・`mdasset://`・`ueasset://`・`class://`・`http(s)://` のみを許可し、`javascript:` や `file:` などの未知スキームをブロックすることで、信頼できないMarkdownによるスクリプト実行やローカルファイルアクセスを防いでいます。さらに、プレビューページには `Content-Security-Policy`（`default-src 'none'; style-src 'unsafe-inline'; img-src data:`）を注入し、外部ネットワークへのリクエスト（外部画像・fetch/XHR・フレーム等）をブロックすることで、IP追跡やローカルサービスへのSSRFを防止しています。外部 `http(s)://` リンクをクリックした際は必ず確認ダイアログで完全なURLを表示してからシステムブラウザで開くため、細工されたMarkdownアセットによるフィッシングを軽減します。
 - **ローカライズ** — エディタUIは英語と日本語に対応しています。
-- **ニバイト文字対応** — 日本語などのニバイト文字を含むMarkdownテキストを正しく処理・表示できます。
+- **マルチバイト文字対応** — 日本語などのマルチバイト文字を含むMarkdownテキストを正しく処理・表示できます。
 
 ![ダークテーマプレビュー](docs/images/dark-theme-preview.png)
 
@@ -65,7 +65,7 @@
 
 ## インストール
 
-1. `Plugins/MarkdownEditor`ディレクトリをプロジェクトの`Plugins/`フォルダにクローンまたはコピーします。
+1. `Plugins/MarkdownAsset`ディレクトリをプロジェクトの`Plugins/`フォルダにクローンまたはコピーします。
 2. プロジェクトファイルを再生成してビルドします。
 3. エディタ起動時にプラグインが自動的に読み込まれます。
 
@@ -142,14 +142,15 @@ Unrealアセットリンクとして認識されるパスルート: `/Game/`, `/
 ## プロジェクト構造
 
 ```
-Plugins/MarkdownEditor/
+Plugins/MarkdownAsset/
 ├── Source/
 │   ├── MarkdownAsset/            # ランタイムモジュール
-│   │   ├── Public/Private/       # UMarkdownAssetクラスとmd4cラッパー
-│   │   └── ThirdParty/md4c/     # 組み込みのmd4cパーサーライブラリ
-│   └── MarkdownAssetEditor/      # エディタモジュール
-│       └── Public/Private/       # アセットファクトリ、アクション、エディタツールキット
-└── MarkdownEditor.uplugin
+│   │   └── Public/Private/       # UMarkdownAssetクラスとmd4cラッパー
+│   ├── MarkdownAssetEditor/      # エディタモジュール
+│   │   └── Public/Private/       # アセットファクトリ、アクション、エディタツールキット、
+│   │                             # アウトライン、markitdown連携、テスト
+│   └── ThirdParty/md4c/          # 組み込みのmd4cパーサーライブラリ
+└── MarkdownAsset.uplugin
 ```
 
 | モジュール | ロードフェーズ | 目的 |
@@ -173,7 +174,7 @@ Plugins/MarkdownEditor/
 ### プラットフォーム
 - **マルチプラットフォーム対応** — macOSおよびLinuxへの対応
 
-### 必須ランタイム
+### ランタイム
 - **UMG Markdownウィジェット** — ゲーム内UIでMarkdownを直接レンダリングするUMGウィジェット
 
 ## FAQ

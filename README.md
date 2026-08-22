@@ -65,7 +65,7 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 
 ## Installation
 
-1. Clone or copy the `Plugins/MarkdownEditor` directory into your project's `Plugins/` folder.
+1. Clone or copy the `Plugins/MarkdownAsset` directory into your project's `Plugins/` folder.
 2. Regenerate project files and build.
 3. The plugin will be loaded automatically on editor startup.
 
@@ -142,14 +142,15 @@ Path roots recognised as Unreal asset links: `/Game/`, `/Engine/`, `/Plugins/`, 
 ## Project Structure
 
 ```
-Plugins/MarkdownEditor/
+Plugins/MarkdownAsset/
 ├── Source/
 │   ├── MarkdownAsset/            # Runtime module
-│   │   ├── Public/Private/       # UMarkdownAsset class & md4c wrapper
-│   │   └── ThirdParty/md4c/     # Embedded md4c parser library
-│   └── MarkdownAssetEditor/      # Editor module
-│       └── Public/Private/       # Asset factory, actions, and editor toolkit
-└── MarkdownEditor.uplugin
+│   │   └── Public/Private/       # UMarkdownAsset class & md4c wrapper
+│   ├── MarkdownAssetEditor/      # Editor module
+│   │   └── Public/Private/       # Asset factory, actions, editor toolkit,
+│   │                             # outline, markitdown integration, and tests
+│   └── ThirdParty/md4c/          # Embedded md4c parser library
+└── MarkdownAsset.uplugin
 ```
 
 | Module | Load Phase | Purpose |
