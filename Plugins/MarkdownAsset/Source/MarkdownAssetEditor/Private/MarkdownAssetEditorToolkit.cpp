@@ -2,8 +2,12 @@
 
 #include "MarkdownAssetEditorToolkit.h"
 #include "MarkdownAsset.h"
+#include "MarkdownImageUtils.h"
 #include "MarkdownOutline.h"
 #include "MarkdownPreviewUtils.h"
+#include "Engine/Texture2D.h"
+#include "Framework/Notifications/NotificationManager.h"
+#include "Widgets/Notifications/SNotificationList.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/Docking/SDockTab.h"
 #include "Widgets/Input/SMultiLineEditableTextBox.h"
@@ -238,6 +242,7 @@ void FMarkdownEditorCommands::RegisterCommands()
 	UI_COMMAND(InsertTable, "Table", "Insert a Markdown table", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(HorizontalRule, "Horizontal Rule", "Insert a horizontal rule", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(Blockquote, "Quote", "Insert a blockquote", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control | EModifierKey::Shift, EKeys::Q));
+	UI_COMMAND(PasteImage, "Paste Image", "Create a texture asset from the clipboard image and insert an image link", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control | EModifierKey::Shift, EKeys::V));
 }
 
 // ---- FMarkdownAssetEditorToolkit ----
@@ -374,6 +379,7 @@ void FMarkdownAssetEditorToolkit::UpdatePreview()
 		FString ParsedHtml = MarkdownAsset->GetParsedHTML();
 		ParsedHtml = MarkBrokenLinks(ParsedHtml);
 		ParsedHtml = MarkdownOutline::InjectHeadingAnchors(ParsedHtml);
+		ParsedHtml = MarkdownImageUtils::EmbedTextureImages(ParsedHtml);
 
 		FString StyledHtml = MarkdownPreviewUtils::GenerateStyledHtml(ParsedHtml);
 
@@ -405,6 +411,7 @@ void FMarkdownAssetEditorToolkit::BindCommands()
 	ToolkitCommands->MapAction(Commands.InsertTable, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnInsertTable));
 	ToolkitCommands->MapAction(Commands.HorizontalRule, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnHorizontalRule));
 	ToolkitCommands->MapAction(Commands.Blockquote, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnBlockquote));
+	ToolkitCommands->MapAction(Commands.PasteImage, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnPasteImage));
 }
 
 void FMarkdownAssetEditorToolkit::RegisterToolbar()
@@ -485,6 +492,11 @@ void FMarkdownAssetEditorToolkit::ExtendToolbar(FToolBarBuilder& ToolBarBuilder)
 	AddCenteredToolBarButton(ToolBarBuilder, Commands.NumberedList, LOCTEXT("NumberedList", "1."));
 	AddCenteredToolBarButton(ToolBarBuilder, Commands.InsertTable, LOCTEXT("Table", "Table"));
 	AddCenteredToolBarButton(ToolBarBuilder, Commands.HorizontalRule, LOCTEXT("HR", "HR"));
+
+	ToolBarBuilder.AddSeparator();
+
+	// Images
+	AddCenteredToolBarButton(ToolBarBuilder, Commands.PasteImage, LOCTEXT("PasteImage", "Img"));
 }
 
 // ---- Markdown Formatting Helpers ----
@@ -629,6 +641,40 @@ void FMarkdownAssetEditorToolkit::OnHorizontalRule()
 void FMarkdownAssetEditorToolkit::OnBlockquote()
 {
 	InsertAtLineStart(TEXT("> "));
+}
+
+void FMarkdownAssetEditorToolkit::OnPasteImage()
+{
+	TArray<uint8> Bgra;
+	int32 Width = 0;
+	int32 Height = 0;
+	if (!MarkdownImageUtils::ReadClipboardImage(Bgra, Width, Height))
+	{
+		FNotificationInfo Info(LOCTEXT("PasteImageNoImage", "No image found in the clipboard."));
+		Info.ExpireDuration = 3.0f;
+		FSlateNotificationManager::Get().AddNotification(Info);
+		return;
+	}
+
+	FString PackagePath;
+	UTexture2D* Texture = MarkdownImageUtils::CreateTextureAssetFromBgra(Bgra, Width, Height, PackagePath);
+	if (!Texture)
+	{
+		FNotificationInfo Info(LOCTEXT("PasteImageCreateFailed", "Failed to create a texture asset from the clipboard image."));
+		Info.ExpireDuration = 3.0f;
+		FSlateNotificationManager::Get().AddNotification(Info);
+		return;
+	}
+
+	// Inserting through the text box fires OnTextChanged, which updates the
+	// asset and schedules the preview refresh that embeds the new texture.
+	InsertTextAtCursor(FString::Printf(TEXT("![%s](%s)"), *Texture->GetName(), *PackagePath));
+
+	FNotificationInfo Info(FText::Format(
+		LOCTEXT("PasteImageCreated", "Created texture asset {0} and inserted an image link."),
+		FText::FromString(PackagePath)));
+	Info.ExpireDuration = 4.0f;
+	FSlateNotificationManager::Get().AddNotification(Info);
 }
 
 // ---- Tab Spawning ----

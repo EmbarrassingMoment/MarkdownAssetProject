@@ -24,6 +24,7 @@ public class MarkdownAssetEditor : ModuleRules
 				"UnrealEd",
 				"Slate",
 				"SlateCore",
+				"ImageCore",
 				"InputCore",
 				"AssetTools",
 				"AppFramework",

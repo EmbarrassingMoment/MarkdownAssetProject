@@ -54,6 +54,8 @@ public:
 	TSharedPtr<FUICommandInfo> HorizontalRule;
 	/** Command to insert a blockquote. */
 	TSharedPtr<FUICommandInfo> Blockquote;
+	/** Command to create a texture asset from the clipboard image and insert a link. */
+	TSharedPtr<FUICommandInfo> PasteImage;
 };
 
 /**
@@ -155,6 +157,8 @@ private:
 	void OnHorizontalRule();
 	/** Inserts a blockquote prefix at the cursor. */
 	void OnBlockquote();
+	/** Creates a texture asset from the clipboard image and inserts an image link. */
+	void OnPasteImage();
 
 	/** Intercepts navigation in the preview browser to handle mdasset:// links. */
 	bool HandleBeforeNavigation(const FString& Url, const FWebNavigationRequest& Request);
