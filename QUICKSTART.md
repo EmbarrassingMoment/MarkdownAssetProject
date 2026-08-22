@@ -10,7 +10,7 @@ Get up and running with the Markdown Editor plugin in minutes.
 
 ## 1. Install the Plugin
 
-1. Copy the `Plugins/MarkdownEditor` directory into your project's `Plugins/` folder.
+1. Copy the `Plugins/MarkdownAsset` directory into your project's `Plugins/` folder.
 2. Regenerate project files and build.
 3. Launch the editor — the plugin loads automatically.
 

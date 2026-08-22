@@ -17,6 +17,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 - **Preview security helpers extracted** — The preview navigation scheme allowlist, percent-decoding, and styled-HTML/CSP generation moved from static functions inside the editor toolkit into the `MarkdownPreviewUtils` namespace (`MarkdownPreviewUtils.h/.cpp`) so they can be unit-tested; runtime behavior is unchanged
 
+### Fixed
+
+- **Japanese Translations** — Added the missing Japanese translations for all Markitdown UI strings (introduced in 1.3.0) and the new Outline panel; the localization manifest/archives are back in sync with the source code and the compiled `.locres` files are regenerated
+- **Plugin Localization Loading** — `MarkdownAsset.uplugin` now declares the `MarkdownEditor` localization target (`LocalizationTargets`), so the plugin's bundled translations load when the plugin is installed standalone. The plugin ships only the compiled `.locres` / `.locmeta` data; authoring data (manifest/archives) lives in the project's `Content/Localization`. The stale pre-rename `Plugins/MarkdownEditor/` localization leftovers were removed
+- **Documentation Paths** — README / QUICKSTART (en/ja) installation steps and the project structure diagram referenced the pre-rename plugin directory (`Plugins/MarkdownEditor`, `MarkdownEditor.uplugin`); they now point to `Plugins/MarkdownAsset` / `MarkdownAsset.uplugin` and reflect the actual `Source/ThirdParty/md4c` location. Also fixed wording in README.ja (「ニバイト文字」→「マルチバイト文字」, section heading 「必須ランタイム」→「ランタイム」)
+- **Plugin Description** — The `.uplugin` description now mentions the outline panel, wikilinks / asset & class links, and Markitdown document conversion instead of only the 1.0 feature set
+
 ## [1.3.0] - 2026-06-09
 
 ### Added
