@@ -16,6 +16,8 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 
 - **Custom Markdown Asset** — `UMarkdownAsset` stores raw Markdown text as a first-class UObject
 - **Live HTML Preview** — Dual-pane editor with a text editor on the left and a real-time HTML preview on the right (updates with a 0.3-second debounce for smooth editing)
+- **Outline Panel** — A docked panel listing every heading (H1–H6) in the document as an indented tree; clicking an entry jumps both the text editor and the HTML preview to that heading
+- **Image Preview & Clipboard Paste** — Reference project textures with `![Alt](/Game/Path/To/Texture)`; the preview loads the `UTexture2D` and embeds it as a PNG `data:` URI, so no external network access is needed and the CSP stays locked down. Unresolvable texture paths render a red placeholder. The **Paste Image** toolbar button (Ctrl+Shift+V, Windows) creates a texture asset under `/Game/Markdown/Images/` from the clipboard image and inserts the link — screenshots can go straight into a spec document without leaving the editor
 - **md4c Integration** — Fast Markdown-to-HTML conversion powered by the embedded [md4c](https://github.com/mity/md4c) C library
 - **Dark Theme** — Styled HTML output with a dark background for comfortable reading
 - **Content Browser Integration** — Create new Markdown assets directly from the context menu, with custom thumbnail previews showing the "MD" label and the first few lines of content
@@ -50,6 +52,7 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 | Blockquote | Ctrl+Shift+Q |
 | Insert Table | — |
 | Horizontal Rule | — |
+| Paste Image | Ctrl+Shift+V |
 
 ![Toolbar Shortcuts](docs/images/toolbar-shortcuts.png)
 
@@ -62,7 +65,7 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 
 ## Installation
 
-1. Clone or copy the `Plugins/MarkdownEditor` directory into your project's `Plugins/` folder.
+1. Clone or copy the `Plugins/MarkdownAsset` directory into your project's `Plugins/` folder.
 2. Regenerate project files and build.
 3. The plugin will be loaded automatically on editor startup.
 
@@ -108,6 +111,7 @@ Markdown assets can cross-link to other Markdown notes, Content Browser assets, 
 | `[Label](class://ClassName)` | Native C++ class | IDE source file (`.cpp` preferred, `.h` fallback) |
 | `[Label](class://BP_MyActor)` | Blueprint class | Blueprint editor |
 | `[Label](https://...)` | External URL | System browser |
+| `![Alt](/Game/Path/To/Texture)` | `UTexture2D` asset | Embedded in the preview as a PNG `data:` URI |
 
 Path roots recognised as Unreal asset links: `/Game/`, `/Engine/`, `/Plugins/`, `/Script/`. Class names are matched against UHT reflection names, so both prefixed forms (`AActor`) and stripped forms (`Actor`) resolve correctly. Targets that cannot be resolved are rendered in red.
 
@@ -138,14 +142,15 @@ Path roots recognised as Unreal asset links: `/Game/`, `/Engine/`, `/Plugins/`, 
 ## Project Structure
 
 ```
-Plugins/MarkdownEditor/
+Plugins/MarkdownAsset/
 ├── Source/
 │   ├── MarkdownAsset/            # Runtime module
-│   │   ├── Public/Private/       # UMarkdownAsset class & md4c wrapper
-│   │   └── ThirdParty/md4c/     # Embedded md4c parser library
-│   └── MarkdownAssetEditor/      # Editor module
-│       └── Public/Private/       # Asset factory, actions, and editor toolkit
-└── MarkdownEditor.uplugin
+│   │   └── Public/Private/       # UMarkdownAsset class & md4c wrapper
+│   ├── MarkdownAssetEditor/      # Editor module
+│   │   └── Public/Private/       # Asset factory, actions, editor toolkit,
+│   │                             # outline, markitdown integration, and tests
+│   └── ThirdParty/md4c/          # Embedded md4c parser library
+└── MarkdownAsset.uplugin
 ```
 
 | Module | Load Phase | Purpose |
@@ -162,7 +167,6 @@ Plugins/MarkdownEditor/
 
 ### Preview
 - **Mermaid Diagrams** — Render flowcharts, sequence diagrams, and more via Mermaid
-- **Image Preview** — Display referenced images in the HTML preview pane
 
 ### Asset Pipeline
 - **PDF / HTML Export** — Export Markdown assets as PDF or standalone HTML files
@@ -191,6 +195,17 @@ A. Yes. You can import any `.md` or `.markdown` file into the Content Browser. I
 
 **Q. Is the WebBrowserWidget plugin required?**
 A. Yes. The Engine's built-in WebBrowserWidget plugin is required to render the live HTML preview in the custom editor. This plugin will automatically enable it for you.
+
+## Testing
+
+The plugin ships with automation tests (editor module, `MarkdownAsset.*` categories) covering Markdown-to-HTML conversion, wikilink / asset link rewriting, outline extraction, and the preview's security allowlist and Content-Security-Policy.
+
+- **In the editor**: **Tools > Session Frontend > Automation**, filter by `MarkdownAsset`, and run the checked tests.
+- **From the command line**:
+
+  ```
+  UnrealEditor-Cmd.exe <Project>.uproject -ExecCmds="Automation RunTests MarkdownAsset; Quit" -unattended -nopause -nosplash -log
+  ```
 
 ## License
 

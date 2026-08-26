@@ -15,6 +15,8 @@
 
 - **カスタムMarkdownアセット** — `UMarkdownAsset`は生のMarkdownテキストをファーストクラスのUObjectとして保存します。
 - **ライブHTMLプレビュー** — 左側にテキストエディタ、右側にリアルタイムのHTMLプレビューを備えたデュアルペインエディタ（スムーズな編集のため、0.3秒のデバウンス処理により更新されます）。
+- **アウトラインパネル** — ドキュメント内のすべての見出し（H1〜H6）をインデント付きで一覧表示するドッキング可能なパネル。項目をクリックすると、テキストエディタとHTMLプレビューの両方が該当の見出しへジャンプします。
+- **画像プレビューとクリップボード貼り付け** — `![代替テキスト](/Game/Path/To/Texture)` でプロジェクト内のテクスチャを参照できます。プレビューは `UTexture2D` を読み込んで PNG の `data:` URI として埋め込むため、外部ネットワークアクセスは不要で CSP も維持されます。解決できないテクスチャパスは赤色のプレースホルダーで表示されます。ツールバーの **Paste Image** ボタン（Ctrl+Shift+V、Windows）はクリップボードの画像から `/Game/Markdown/Images/` 配下にテクスチャアセットを作成してリンクを挿入するため、スクリーンショット付きの仕様書がエディタ内で完結します。
 - **md4c統合** — 組み込まれた[md4c](https://github.com/mity/md4c) Cライブラリを利用した高速なMarkdownからHTMLへの変換を実現しました。
 - **ダークテーマ** — 快適に読めるように暗い背景でスタイリングされたHTML出力。
 - **コンテンツブラウザの統合** — コンテキストメニューから直接新しいMarkdownアセットを作成できます。「MD」ラベルとコンテンツの最初の数行を表示するカスタムサムネイルプレビュー付きです。
@@ -28,7 +30,7 @@
 - **元に戻す / やり直し** — Unreal Editorのトランザクションシステムと統合された完全なUndo/Redoサポート（Ctrl+Z / Ctrl+Y）
 - **セキュリティ** — ユーザー提供のMarkdownレンダリング時のXSSを防止するため、生のHTMLブロックおよびインラインHTMLはデフォルトで無効化しています。また、プレビューブラウザのナビゲーションはホワイトリスト方式を採用しており、`data:`・`about:`・`mdasset://`・`ueasset://`・`class://`・`http(s)://` のみを許可し、`javascript:` や `file:` などの未知スキームをブロックすることで、信頼できないMarkdownによるスクリプト実行やローカルファイルアクセスを防いでいます。さらに、プレビューページには `Content-Security-Policy`（`default-src 'none'; style-src 'unsafe-inline'; img-src data:`）を注入し、外部ネットワークへのリクエスト（外部画像・fetch/XHR・フレーム等）をブロックすることで、IP追跡やローカルサービスへのSSRFを防止しています。外部 `http(s)://` リンクをクリックした際は必ず確認ダイアログで完全なURLを表示してからシステムブラウザで開くため、細工されたMarkdownアセットによるフィッシングを軽減します。
 - **ローカライズ** — エディタUIは英語と日本語に対応しています。
-- **ニバイト文字対応** — 日本語などのニバイト文字を含むMarkdownテキストを正しく処理・表示できます。
+- **マルチバイト文字対応** — 日本語などのマルチバイト文字を含むMarkdownテキストを正しく処理・表示できます。
 
 ![ダークテーマプレビュー](docs/images/dark-theme-preview.png)
 
@@ -50,6 +52,7 @@
 | 引用ブロック | Ctrl+Shift+Q |
 | テーブル挿入 | — |
 | 水平線 | — |
+| 画像貼り付け | Ctrl+Shift+V |
 
 ![ツールバーショートカット](docs/images/toolbar-shortcuts.png)
 
@@ -62,7 +65,7 @@
 
 ## インストール
 
-1. `Plugins/MarkdownEditor`ディレクトリをプロジェクトの`Plugins/`フォルダにクローンまたはコピーします。
+1. `Plugins/MarkdownAsset`ディレクトリをプロジェクトの`Plugins/`フォルダにクローンまたはコピーします。
 2. プロジェクトファイルを再生成してビルドします。
 3. エディタ起動時にプラグインが自動的に読み込まれます。
 
@@ -108,6 +111,7 @@ Markdownアセットは他のMarkdownノート、Content Browserアセット、B
 | `[ラベル](class://クラス名)` | ネイティブC++クラス | IDEのソースファイル（`.cpp` 優先、`.h` フォールバック） |
 | `[ラベル](class://BP_MyActor)` | Blueprintクラス | Blueprintエディタ |
 | `[ラベル](https://...)` | 外部URL | システムブラウザ |
+| `![代替テキスト](/Game/Path/To/Texture)` | `UTexture2D` アセット | プレビューに PNG `data:` URI として埋め込み |
 
 Unrealアセットリンクとして認識されるパスルート: `/Game/`, `/Engine/`, `/Plugins/`, `/Script/`。クラス名はUHTのリフレクション名と照合されるため、プレフィックス付き (`AActor`) と除去済み (`Actor`) の両形式が正しく解決されます。解決できない対象は赤色で表示されます。
 
@@ -138,14 +142,15 @@ Unrealアセットリンクとして認識されるパスルート: `/Game/`, `/
 ## プロジェクト構造
 
 ```
-Plugins/MarkdownEditor/
+Plugins/MarkdownAsset/
 ├── Source/
 │   ├── MarkdownAsset/            # ランタイムモジュール
-│   │   ├── Public/Private/       # UMarkdownAssetクラスとmd4cラッパー
-│   │   └── ThirdParty/md4c/     # 組み込みのmd4cパーサーライブラリ
-│   └── MarkdownAssetEditor/      # エディタモジュール
-│       └── Public/Private/       # アセットファクトリ、アクション、エディタツールキット
-└── MarkdownEditor.uplugin
+│   │   └── Public/Private/       # UMarkdownAssetクラスとmd4cラッパー
+│   ├── MarkdownAssetEditor/      # エディタモジュール
+│   │   └── Public/Private/       # アセットファクトリ、アクション、エディタツールキット、
+│   │                             # アウトライン、markitdown連携、テスト
+│   └── ThirdParty/md4c/          # 組み込みのmd4cパーサーライブラリ
+└── MarkdownAsset.uplugin
 ```
 
 | モジュール | ロードフェーズ | 目的 |
@@ -162,7 +167,6 @@ Plugins/MarkdownEditor/
 
 ### プレビュー
 - **Mermaid図表サポート** — Mermaidによるフローチャート・シーケンス図などの描画
-- **画像プレビュー** — Markdown内で参照されている画像をHTMLプレビューに表示
 
 ### アセットパイプライン
 - **PDF / HTMLエクスポート** — MarkdownアセットをPDFまたはスタンドアロンHTMLファイルとしてエクスポート
@@ -170,7 +174,7 @@ Plugins/MarkdownEditor/
 ### プラットフォーム
 - **マルチプラットフォーム対応** — macOSおよびLinuxへの対応
 
-### 必須ランタイム
+### ランタイム
 - **UMG Markdownウィジェット** — ゲーム内UIでMarkdownを直接レンダリングするUMGウィジェット
 
 ## FAQ
@@ -191,6 +195,17 @@ A. はい。任意の `.md` または `.markdown` ファイルをコンテンツ
 
 **Q. WebBrowserWidget プラグインは必須ですか？**
 A. はい。カスタムエディタでライブHTMLプレビューを描画するには、エンジン組み込みの WebBrowserWidget プラグインが必要です。このプラグインが自動的に有効化します。
+
+## テスト
+
+本プラグインには Automation テスト（エディタモジュール内、カテゴリ `MarkdownAsset.*`）が含まれており、Markdown→HTML 変換、Wikilink / アセットリンクの書き換え、アウトライン抽出、およびプレビューのセキュリティ許可リストと Content-Security-Policy を検証します。
+
+- **エディタ内で実行**: **Tools > Session Frontend > Automation** を開き、`MarkdownAsset` でフィルタしてチェックしたテストを実行します。
+- **コマンドラインから実行**:
+
+  ```
+  UnrealEditor-Cmd.exe <Project>.uproject -ExecCmds="Automation RunTests MarkdownAsset; Quit" -unattended -nopause -nosplash -log
+  ```
 
 ## ライセンス
 
