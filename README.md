@@ -18,10 +18,12 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 - **Live HTML Preview** — Dual-pane editor with a text editor on the left and a real-time HTML preview on the right (updates with a 0.3-second debounce for smooth editing)
 - **Outline Panel** — A docked panel listing every heading (H1–H6) in the document as an indented tree; clicking an entry jumps both the text editor and the HTML preview to that heading
 - **Image Preview & Clipboard Paste** — Reference project textures with `![Alt](/Game/Path/To/Texture)`; the preview loads the `UTexture2D` and embeds it as a PNG `data:` URI, so no external network access is needed and the CSP stays locked down. Unresolvable texture paths render a red placeholder. The **Paste Image** toolbar button (Ctrl+Shift+V, Windows) creates a texture asset under `/Game/Markdown/Images/` from the clipboard image and inserts the link — screenshots can go straight into a spec document without leaving the editor
+- **Find & Replace** — Ctrl+F opens a search bar above the editor (Ctrl+H adds the Replace row). Enter / F3 and Shift+Enter / Shift+F3 step through the matches with wrap-around, the bar shows "n of m", a toggle enables case-sensitive search, and **Replace** / **Replace All** are undoable
+- **Drag & Drop Links** — Drop assets from the Content Browser onto the text editor to insert the matching Markdown at the cursor: `[[Name]]` for Markdown assets, `![Name](/Game/Path)` for textures, `[Name](/Game/Path)` for everything else
 - **md4c Integration** — Fast Markdown-to-HTML conversion powered by the embedded [md4c](https://github.com/mity/md4c) C library
-- **Dark Theme** — Styled HTML output with a dark background for comfortable reading
+- **Dark / Light Themes** — The HTML preview ships with a dark theme and a light theme; pick one under **Editor Preferences > Plugins > Markdown Editor**, together with the preview refresh delay, the editor font size, and the folder for pasted images
 - **Content Browser Integration** — Create new Markdown assets directly from the context menu, with custom thumbnail previews showing the "MD" label and the first few lines of content
-- **Import / Export** — Drag-and-drop `.md` / `.markdown` files into the Content Browser to import, reimport from source files, or export assets back to `.md`
+- **Import / Export** — Drag-and-drop `.md` / `.markdown` files into the Content Browser to import, reimport from source files, or export assets back to `.md` or to a standalone `.html` file (themed CSS and project textures embedded, no external dependencies)
 - **Markitdown Integration** — Import `.pdf` / `.docx` / `.pptx` / `.html` / `.htm` files directly into the Content Browser by routing them through Microsoft's [markitdown](https://github.com/microsoft/markitdown) CLI; Reimport re-runs the conversion against the stored source path. **Tools > Markdown > Batch Convert to Markdown...** opens a file picker and creates multiple `UMarkdownAsset` entries with a cancellable progress dialog. `UMarkitdownBlueprintLibrary` exposes the conversion helpers to Editor Utility Widgets and editor scripts
 - **GitHub Flavored Markdown** — Supports GFM extensions such as tables, task lists, and strikethrough via the `MD_DIALECT_GITHUB` flag
 - **Wikilinks** — Write `[[AssetName]]` to create inter-asset links; clicking a wikilink in the preview opens the target Markdown asset in a new editor tab. Broken links (pointing to non-existent assets) are highlighted in red
@@ -53,6 +55,9 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 | Insert Table | — |
 | Horizontal Rule | — |
 | Paste Image | Ctrl+Shift+V |
+| Find | Ctrl+F |
+| Replace | Ctrl+H |
+| Find Next / Previous | F3 / Shift+F3 |
 
 ![Toolbar Shortcuts](docs/images/toolbar-shortcuts.png)
 
@@ -85,7 +90,39 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 
 - **Import**: Drag a `.md` or `.markdown` file into the Content Browser to create a Markdown asset.
 - **Reimport**: Right-click an imported asset and select **Reimport** to reload from the original source file.
-- **Export**: Right-click a Markdown asset and select **Asset Actions > Export** to save it as a `.md` file.
+- **Export**: Right-click a Markdown asset and select **Asset Actions > Export** to save it as a `.md` file, or pick **Standalone HTML File** in the file type dropdown to write a self-contained `.html` (UTF-8, preview CSS of the selected theme, heading anchors, referenced textures embedded as PNG `data:` URIs). The preview-only Content-Security-Policy is not included in the export so regular external images render in a browser.
+
+### Editor Preferences
+
+**Editor Preferences > Plugins > Markdown Editor** (stored per user in `EditorPerProjectUserSettings.ini`) holds:
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| Preview Theme | Dark | Color scheme of the HTML preview and the HTML export (`Dark` / `Light`) |
+| Preview Update Delay | 0.3 s | Debounce between the last keystroke and the preview / outline refresh; `0` refreshes immediately |
+| Editor Font Size | 12 | Font size of the Markdown text editor pane |
+| Pasted Image Folder | `/Game/Markdown/Images` | Content Browser folder that receives textures created by **Paste Image** |
+
+Changes apply to open Markdown editors immediately.
+
+### Find & Replace
+
+- **Ctrl+F** opens the search bar above the text editor, seeded with the current single-line selection. Typing updates the match count live and selects the nearest match.
+- **Enter** / **F3** selects the next match, **Shift+Enter** / **Shift+F3** the previous one; both wrap around. **Esc** or the **X** button closes the bar.
+- **Aa** toggles case-sensitive matching.
+- **Ctrl+H** (or the **Replace** toggle) shows the replace row. **Replace** replaces the selected match and moves to the next one; **Replace All** replaces every match and reports the count. Both go through the editor transaction system, so **Ctrl+Z** undoes them.
+
+### Drag & Drop Links
+
+Drag one or more assets from the Content Browser onto the text editor pane to insert links at the cursor:
+
+| Dropped asset | Inserted Markdown |
+|---------------|-------------------|
+| Markdown asset | `[[AssetName]]` |
+| Texture (`UTexture2D`) | `![AssetName](/Game/Path/To/AssetName)` |
+| Anything else (Blueprint, Material, ...) | `[AssetName](/Game/Path/To/AssetName)` |
+
+Several assets are inserted one per line.
 
 ### Markitdown (PDF / DOCX / PPTX / HTML)
 
@@ -148,7 +185,8 @@ Plugins/MarkdownAsset/
 │   │   └── Public/Private/       # UMarkdownAsset class & md4c wrapper
 │   ├── MarkdownAssetEditor/      # Editor module
 │   │   └── Public/Private/       # Asset factory, actions, editor toolkit,
-│   │                             # outline, markitdown integration, and tests
+│   │                             # outline, search, link/image utils, exporters,
+│   │                             # editor settings, markitdown integration, and tests
 │   └── ThirdParty/md4c/          # Embedded md4c parser library
 └── MarkdownAsset.uplugin
 ```
@@ -162,14 +200,14 @@ Plugins/MarkdownAsset/
 
 ### Editor
 - **Syntax Highlighting** — Color-coded Markdown syntax in the text editor
-- **Find & Replace** — In-editor text search and replace (Ctrl+F / Ctrl+H)
-- **Theme Switching** — Light theme and user-selectable theme options
+- **Wikilink Autocomplete** — Suggest Markdown asset names while typing `[[`
+- **Backlinks** — List the Markdown assets that link to the current one
 
 ### Preview
 - **Mermaid Diagrams** — Render flowcharts, sequence diagrams, and more via Mermaid
 
 ### Asset Pipeline
-- **PDF / HTML Export** — Export Markdown assets as PDF or standalone HTML files
+- **PDF Export** — Export Markdown assets as PDF files
 
 ### Platform
 - **Multi-platform Support** — macOS and Linux compatibility
@@ -198,7 +236,7 @@ A. Yes. The Engine's built-in WebBrowserWidget plugin is required to render the 
 
 ## Testing
 
-The plugin ships with automation tests (editor module, `MarkdownAsset.*` categories) covering Markdown-to-HTML conversion, wikilink / asset link rewriting, outline extraction, and the preview's security allowlist and Content-Security-Policy.
+The plugin ships with automation tests (editor module, `MarkdownAsset.*` categories) covering Markdown-to-HTML conversion, wikilink / asset link rewriting, outline extraction, the preview's security allowlist, Content-Security-Policy and themes, the Find & Replace helpers, the dropped-asset link syntax, and the standalone HTML export.
 
 - **In the editor**: **Tools > Session Frontend > Automation**, filter by `MarkdownAsset`, and run the checked tests.
 - **From the command line**:

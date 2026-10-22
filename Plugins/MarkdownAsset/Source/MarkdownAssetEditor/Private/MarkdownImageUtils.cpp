@@ -1,6 +1,8 @@
 // Copyright (c) 2026 Kurorekishi (EmbarrassingMoment).
 
 #include "MarkdownImageUtils.h"
+#include "MarkdownEditorSettings.h"
+#include "MarkdownPreviewUtils.h"
 
 #include "AssetRegistry/AssetRegistryModule.h"
 #include "AssetToolsModule.h"
@@ -11,6 +13,7 @@
 #include "Internationalization/Regex.h"
 #include "Misc/Base64.h"
 #include "Misc/DateTime.h"
+#include "Misc/ScopeLock.h"
 #include "Misc/PackageName.h"
 #include "UObject/Package.h"
 #include "UObject/SoftObjectPath.h"
@@ -27,6 +30,21 @@ namespace
 {
 	/** Upper bound for an embedded PNG; larger images would bloat the preview data: URL. */
 	constexpr int64 MaxEmbeddedPngBytes = 12 * 1024 * 1024;
+
+	/** Upper bound for the total size of cached data: URIs before the cache is flushed. */
+	constexpr int64 MaxTextureCacheBytes = 64 * 1024 * 1024;
+
+	/** A PNG data: URI produced for a texture, tagged with the source data id it was built from. */
+	struct FCachedTextureImage
+	{
+		FGuid SourceId;
+		FString DataUri;
+	};
+
+	/** Cache of encoded textures keyed by package path; avoids re-encoding on every preview refresh. */
+	TMap<FString, FCachedTextureImage> GTextureImageCache;
+	int64 GTextureImageCacheBytes = 0;
+	FCriticalSection GTextureImageCacheLock;
 
 #if PLATFORM_WINDOWS
 	/** Upper bound for clipboard image pixels (64 megapixels). */
@@ -54,20 +72,10 @@ namespace
 		return Output;
 	}
 
-	/** Escapes text for safe inclusion in HTML content. */
-	FString EscapeHtml(const FString& Input)
-	{
-		FString Output = Input;
-		Output.ReplaceInline(TEXT("&"), TEXT("&amp;"));
-		Output.ReplaceInline(TEXT("<"), TEXT("&lt;"));
-		Output.ReplaceInline(TEXT(">"), TEXT("&gt;"));
-		Output.ReplaceInline(TEXT("\""), TEXT("&quot;"));
-		return Output;
-	}
-
 	/**
 	 * Loads the UTexture2D at the given package path and compresses its source
-	 * pixels to a data:image/png;base64 URI.
+	 * pixels to a data:image/png;base64 URI. Results are cached per package path
+	 * and invalidated when the texture's source data id changes (reimport / edit).
 	 */
 	bool TryCreateTextureDataUri(const FString& PackagePath, FString& OutDataUri)
 	{
@@ -93,13 +101,28 @@ namespace
 		}
 		if (!FPackageName::DoesPackageExist(PackageOnly))
 		{
+			MarkdownImageUtils::InvalidateTextureImageCache(PackagePath);
 			return false;
 		}
 
 		UTexture2D* Texture = Cast<UTexture2D>(FSoftObjectPath(ObjectPath).TryLoad());
 		if (!Texture || !Texture->Source.IsValid())
 		{
+			MarkdownImageUtils::InvalidateTextureImageCache(PackagePath);
 			return false;
+		}
+
+		const FGuid SourceId = Texture->Source.GetId();
+		{
+			FScopeLock Lock(&GTextureImageCacheLock);
+			if (const FCachedTextureImage* Cached = GTextureImageCache.Find(PackagePath))
+			{
+				if (Cached->SourceId == SourceId)
+				{
+					OutDataUri = Cached->DataUri;
+					return true;
+				}
+			}
 		}
 
 		FImage SourceImage;
@@ -123,6 +146,29 @@ namespace
 		}
 
 		OutDataUri = TEXT("data:image/png;base64,") + FBase64::Encode(PngData.GetData(), static_cast<uint32>(PngData.Num()));
+
+		{
+			FScopeLock Lock(&GTextureImageCacheLock);
+
+			if (const FCachedTextureImage* Stale = GTextureImageCache.Find(PackagePath))
+			{
+				GTextureImageCacheBytes -= Stale->DataUri.Len() * sizeof(TCHAR);
+			}
+
+			// Keep the cache bounded: flush everything rather than tracking LRU order,
+			// a full re-encode after 64 MB of previews is cheap enough.
+			if (GTextureImageCacheBytes + OutDataUri.Len() * static_cast<int64>(sizeof(TCHAR)) > MaxTextureCacheBytes)
+			{
+				GTextureImageCache.Empty();
+				GTextureImageCacheBytes = 0;
+			}
+
+			FCachedTextureImage& Entry = GTextureImageCache.FindOrAdd(PackagePath);
+			Entry.SourceId = SourceId;
+			Entry.DataUri = OutDataUri;
+			GTextureImageCacheBytes += OutDataUri.Len() * sizeof(TCHAR);
+		}
+
 		return true;
 	}
 
@@ -240,7 +286,7 @@ FString MarkdownImageUtils::EmbedTextureImages(const FString& Html)
 			}
 			else
 			{
-				Result += FString::Printf(TEXT("<span class=\"md-missing-image\">[Image not found: %s]</span>"), *EscapeHtml(Src));
+				Result += FString::Printf(TEXT("<span class=\"md-missing-image\">[Image not found: %s]</span>"), *MarkdownPreviewUtils::EscapeHtml(Src));
 			}
 		}
 		else
@@ -288,7 +334,9 @@ UTexture2D* MarkdownImageUtils::CreateTextureAssetFromBgra(const TArray<uint8>& 
 		return nullptr;
 	}
 
-	const FString BaseName = FString::Printf(TEXT("/Game/Markdown/Images/T_PastedImage_%s"),
+	const UMarkdownEditorSettings* Settings = GetDefault<UMarkdownEditorSettings>();
+	const FString Folder = Settings ? Settings->GetPastedImagePackagePath() : TEXT("/Game/Markdown/Images");
+	const FString BaseName = FString::Printf(TEXT("%s/T_PastedImage_%s"), *Folder,
 		*FDateTime::Now().ToString(TEXT("%Y%m%d_%H%M%S")));
 
 	FAssetToolsModule& AssetToolsModule = FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools");
@@ -316,4 +364,27 @@ UTexture2D* MarkdownImageUtils::CreateTextureAssetFromBgra(const TArray<uint8>& 
 
 	OutPackagePath = PackageName;
 	return Texture;
+}
+
+void MarkdownImageUtils::InvalidateTextureImageCache(const FString& PackagePath)
+{
+	FScopeLock Lock(&GTextureImageCacheLock);
+	if (const FCachedTextureImage* Entry = GTextureImageCache.Find(PackagePath))
+	{
+		GTextureImageCacheBytes -= Entry->DataUri.Len() * sizeof(TCHAR);
+		GTextureImageCache.Remove(PackagePath);
+	}
+}
+
+void MarkdownImageUtils::ClearTextureImageCache()
+{
+	FScopeLock Lock(&GTextureImageCacheLock);
+	GTextureImageCache.Empty();
+	GTextureImageCacheBytes = 0;
+}
+
+int32 MarkdownImageUtils::GetTextureImageCacheCount()
+{
+	FScopeLock Lock(&GTextureImageCacheLock);
+	return GTextureImageCache.Num();
 }

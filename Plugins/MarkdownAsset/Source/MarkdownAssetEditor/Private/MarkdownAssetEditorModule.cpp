@@ -4,6 +4,7 @@
 #include "MarkdownAssetActions.h"
 #include "MarkdownAssetThumbnailRenderer.h"
 #include "MarkdownAsset.h"
+#include "MarkdownImageUtils.h"
 #include "MarkitdownBlueprintLibrary.h"
 #include "AssetToolsModule.h"
 #include "IAssetTools.h"
@@ -93,6 +94,9 @@ void FMarkdownAssetEditorModule::ShutdownModule()
 	}
 
 	MarkdownAssetActions.Reset();
+
+	// Release the PNG data: URIs cached for the preview.
+	MarkdownImageUtils::ClearTextureImageCache();
 
 	// Unregister thumbnail renderer
 	if (UObjectInitialized())
