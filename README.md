@@ -238,6 +238,7 @@ A. Yes. The Engine's built-in WebBrowserWidget plugin is required to render the 
 
 The plugin ships with automation tests (editor module, `MarkdownAsset.*` categories) covering Markdown-to-HTML conversion, wikilink / asset link rewriting, outline extraction, the preview's security allowlist, Content-Security-Policy and themes, the Find & Replace helpers, the dropped-asset link syntax, and the standalone HTML export.
 
+- **Feature tour**: import [`docs/samples/MD_FeatureTour_1_5.md`](docs/samples/README.md) into the Content Browser and follow its sections to check the editor preferences, themes, Find & Replace, drag & drop links, HTML export, and the texture cache by hand.
 - **In the editor**: **Tools > Session Frontend > Automation**, filter by `MarkdownAsset`, and run the checked tests.
 - **From the command line**:
 

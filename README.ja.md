@@ -238,6 +238,7 @@ A. はい。カスタムエディタでライブHTMLプレビューを描画す�
 
 本プラグインには Automation テスト（エディタモジュール内、カテゴリ `MarkdownAsset.*`）が含まれており、Markdown→HTML 変換、Wikilink / アセットリンクの書き換え、アウトライン抽出、プレビューのセキュリティ許可リスト・Content-Security-Policy・テーマ、検索と置換のヘルパー、ドロップしたアセットのリンク構文、およびスタンドアロン HTML エクスポートを検証します。
 
+- **機能ツアー**: [`docs/samples/MD_FeatureTour_1_5.md`](docs/samples/README.ja.md) をコンテンツブラウザにインポートし、本文の手順に沿ってエディタ設定、テーマ、検索と置換、ドラッグ＆ドロップ、HTML エクスポート、テクスチャキャッシュを手動で確認できます。
 - **エディタ内で実行**: **Tools > Session Frontend > Automation** を開き、`MarkdownAsset` でフィルタしてチェックしたテストを実行します。
 - **コマンドラインから実行**:
 
