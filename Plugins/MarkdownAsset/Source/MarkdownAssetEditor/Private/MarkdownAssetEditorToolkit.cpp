@@ -2,9 +2,20 @@
 
 #include "MarkdownAssetEditorToolkit.h"
 #include "MarkdownAsset.h"
+#include "MarkdownEditorSettings.h"
 #include "MarkdownImageUtils.h"
+#include "MarkdownLinkUtils.h"
 #include "MarkdownOutline.h"
 #include "MarkdownPreviewUtils.h"
+#include "MarkdownTextSearch.h"
+#include "AssetRegistry/AssetData.h"
+#include "DragAndDrop/AssetDragDropOp.h"
+#include "Styling/AppStyle.h"
+#include "Widgets/SBoxPanel.h"
+#include "Widgets/SCompoundWidget.h"
+#include "Widgets/Input/SCheckBox.h"
+#include "Widgets/Input/SEditableTextBox.h"
+#include "Widgets/Layout/SBorder.h"
 #include "Engine/Texture2D.h"
 #include "Framework/Notifications/NotificationManager.h"
 #include "Widgets/Notifications/SNotificationList.h"
@@ -44,177 +55,69 @@
 
 DEFINE_LOG_CATEGORY_STATIC(LogMarkdownAssetEditor, Log, All);
 
-/**
- * Builds reflection-name candidates to try when resolving a user-supplied class name.
- * UHT strips the leading A/U/I prefix from native class names, so "class://AActor"
- * must be matched against the UClass named "Actor". Conversely, a bare "Actor" may
- * need to be resolved as "AActor" for a hypothetical class in some projects.
- */
-static TArray<FString> BuildClassNameCandidates(const FString& ClassName)
-{
-	TArray<FString> Candidates;
-	if (ClassName.IsEmpty())
-	{
-		return Candidates;
-	}
+// ---- SMarkdownAssetDropTarget ----
 
-	Candidates.Add(ClassName);
-
-	// Strip a single-letter A/U/I prefix when followed by an uppercase letter.
-	if (ClassName.Len() > 1 && FChar::IsUpper(ClassName[1]))
-	{
-		const TCHAR First = ClassName[0];
-		if (First == TEXT('A') || First == TEXT('U') || First == TEXT('I'))
-		{
-			Candidates.AddUnique(ClassName.Mid(1));
-		}
-	}
-
-	// Add A/U-prefixed variants for bare names.
-	if (FChar::IsUpper(ClassName[0]))
-	{
-		Candidates.AddUnique(FString::Printf(TEXT("A%s"), *ClassName));
-		Candidates.AddUnique(FString::Printf(TEXT("U%s"), *ClassName));
-	}
-
-	return Candidates;
-}
-
-/** Returns true if an Unreal asset exists at the given object path. */
-static bool DoesAssetExistAtPath(const FString& ObjectPath)
-{
-	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
-	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
-
-	// Strip a trailing ".ObjectName" to derive the package path; the registry indexes by package.
-	FString PackagePath = ObjectPath;
-	int32 DotIndex;
-	if (PackagePath.FindChar(TEXT('.'), DotIndex))
-	{
-		PackagePath.LeftInline(DotIndex);
-	}
-
-	TArray<FAssetData> PackageAssets;
-	AssetRegistry.GetAssetsByPackageName(FName(*PackagePath), PackageAssets);
-	if (PackageAssets.Num() > 0)
-	{
-		return true;
-	}
-
-	// Secondary: legacy object-path query in case the caller supplied a non-package form.
-	if (AssetRegistry.GetAssetByObjectPath(FSoftObjectPath(ObjectPath)).IsValid())
-	{
-		return true;
-	}
-
-	// Last resort: does the package file exist on disk? Catches assets the registry has not
-	// yet indexed (e.g. newly added plugin content).
-	return FPackageName::DoesPackageExist(PackagePath);
-}
-
-/** Returns true if a native UClass or Blueprint class matching ClassName can be resolved. */
-static bool DoesClassExist(const FString& ClassName)
-{
-	if (ClassName.IsEmpty())
-	{
-		return false;
-	}
-
-	// Native class lookup against reflection names (UHT strips A/U/I prefixes).
-	for (const FString& Candidate : BuildClassNameCandidates(ClassName))
-	{
-		if (FindFirstObject<UClass>(*Candidate, EFindFirstObjectOptions::NativeFirst) != nullptr)
-		{
-			return true;
-		}
-	}
-
-	// Blueprint fallback via Asset Registry (accepts both "BP_Foo" and "BP_Foo_C").
-	FString BlueprintAssetName = ClassName;
-	if (BlueprintAssetName.EndsWith(TEXT("_C")))
-	{
-		BlueprintAssetName.LeftChopInline(2);
-	}
-
-	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
-	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
-
-	TArray<FAssetData> BlueprintAssets;
-	AssetRegistry.GetAssetsByClass(UBlueprint::StaticClass()->GetClassPathName(), BlueprintAssets);
-	for (const FAssetData& Asset : BlueprintAssets)
-	{
-		if (Asset.AssetName.ToString() == BlueprintAssetName)
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
+DECLARE_DELEGATE_OneParam(FOnMarkdownAssetsDropped, const TArray<FAssetData>&);
 
 /**
- * Walks every <a href="..."> tag and adds the "md-broken-link" CSS class when
- * the target of an mdasset://, ueasset://, or class:// scheme cannot be resolved.
- * External URLs and other schemes are left untouched.
+ * Wraps the text editor so that assets dragged from the Content Browser can be
+ * dropped onto it. SMultiLineEditableText does not handle drag & drop itself,
+ * so the events bubble up to this widget.
  */
-static FString MarkBrokenLinks(const FString& Html)
+class SMarkdownAssetDropTarget : public SCompoundWidget
 {
-	// Cache MarkdownAsset names once for mdasset:// lookups.
-	FAssetRegistryModule& AssetRegistryModule = FModuleManager::LoadModuleChecked<FAssetRegistryModule>("AssetRegistry");
-	IAssetRegistry& AssetRegistry = AssetRegistryModule.Get();
+public:
+	SLATE_BEGIN_ARGS(SMarkdownAssetDropTarget) {}
+		SLATE_DEFAULT_SLOT(FArguments, Content)
+		SLATE_EVENT(FOnMarkdownAssetsDropped, OnAssetsDropped)
+	SLATE_END_ARGS()
 
-	TArray<FAssetData> AllMarkdownAssets;
-	AssetRegistry.GetAssetsByClass(UMarkdownAsset::StaticClass()->GetClassPathName(), AllMarkdownAssets);
-
-	TSet<FString> MarkdownAssetNames;
-	for (const FAssetData& Asset : AllMarkdownAssets)
+	void Construct(const FArguments& InArgs)
 	{
-		MarkdownAssetNames.Add(Asset.AssetName.ToString());
+		OnAssetsDropped = InArgs._OnAssetsDropped;
+		ChildSlot
+		[
+			InArgs._Content.Widget
+		];
 	}
 
-	const FRegexPattern LinkPattern(TEXT("<a href=\"(mdasset|ueasset|class)://([^\"]*)\""));
-	FRegexMatcher Matcher(LinkPattern, Html);
-
-	FString Result;
-	int32 LastPos = 0;
-
-	while (Matcher.FindNext())
+	virtual void OnDragEnter(const FGeometry& MyGeometry, const FDragDropEvent& DragDropEvent) override
 	{
-		Result += Html.Mid(LastPos, Matcher.GetMatchBeginning() - LastPos);
-
-		const FString Scheme = Matcher.GetCaptureGroup(1);
-		const FString EncodedTarget = Matcher.GetCaptureGroup(2);
-		const FString DecodedTarget = MarkdownPreviewUtils::PercentDecode(EncodedTarget);
-
-		bool bTargetExists = false;
-		if (Scheme == TEXT("mdasset"))
+		if (TSharedPtr<FAssetDragDropOp> AssetOp = DragDropEvent.GetOperationAs<FAssetDragDropOp>())
 		{
-			bTargetExists = MarkdownAssetNames.Contains(DecodedTarget);
+			AssetOp->SetToolTip(
+				LOCTEXT("DropAssetLinkTooltip", "Insert a Markdown link to this asset at the cursor"),
+				FAppStyle::GetBrush(TEXT("Graph.ConnectorFeedback.OK")));
 		}
-		else if (Scheme == TEXT("ueasset"))
-		{
-			bTargetExists = DoesAssetExistAtPath(DecodedTarget);
-		}
-		else // class
-		{
-			bTargetExists = DoesClassExist(DecodedTarget);
-		}
-
-		if (bTargetExists)
-		{
-			Result += Html.Mid(Matcher.GetMatchBeginning(), Matcher.GetMatchEnding() - Matcher.GetMatchBeginning());
-		}
-		else
-		{
-			Result += FString::Printf(TEXT("<a class=\"md-broken-link\" href=\"%s://%s\""), *Scheme, *EncodedTarget);
-		}
-
-		LastPos = Matcher.GetMatchEnding();
 	}
-	Result += Html.Mid(LastPos);
 
-	return Result;
-}
+	virtual void OnDragLeave(const FDragDropEvent& DragDropEvent) override
+	{
+		if (TSharedPtr<FAssetDragDropOp> AssetOp = DragDropEvent.GetOperationAs<FAssetDragDropOp>())
+		{
+			AssetOp->ResetToDefaultToolTip();
+		}
+	}
+
+	virtual FReply OnDragOver(const FGeometry& MyGeometry, const FDragDropEvent& DragDropEvent) override
+	{
+		return DragDropEvent.GetOperationAs<FAssetDragDropOp>().IsValid() ? FReply::Handled() : FReply::Unhandled();
+	}
+
+	virtual FReply OnDrop(const FGeometry& MyGeometry, const FDragDropEvent& DragDropEvent) override
+	{
+		if (TSharedPtr<FAssetDragDropOp> AssetOp = DragDropEvent.GetOperationAs<FAssetDragDropOp>())
+		{
+			AssetOp->ResetToDefaultToolTip();
+			OnAssetsDropped.ExecuteIfBound(AssetOp->GetAssets());
+			return FReply::Handled();
+		}
+		return FReply::Unhandled();
+	}
+
+private:
+	FOnMarkdownAssetsDropped OnAssetsDropped;
+};
 
 // ---- FMarkdownEditorCommands ----
 
@@ -243,6 +146,10 @@ void FMarkdownEditorCommands::RegisterCommands()
 	UI_COMMAND(HorizontalRule, "Horizontal Rule", "Insert a horizontal rule", EUserInterfaceActionType::Button, FInputChord());
 	UI_COMMAND(Blockquote, "Quote", "Insert a blockquote", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control | EModifierKey::Shift, EKeys::Q));
 	UI_COMMAND(PasteImage, "Paste Image", "Create a texture asset from the clipboard image and insert an image link", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control | EModifierKey::Shift, EKeys::V));
+	UI_COMMAND(Find, "Find", "Search the Markdown text", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control, EKeys::F));
+	UI_COMMAND(Replace, "Replace", "Search and replace in the Markdown text", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Control, EKeys::H));
+	UI_COMMAND(FindNext, "Find Next", "Select the next search match", EUserInterfaceActionType::Button, FInputChord(EKeys::F3));
+	UI_COMMAND(FindPrevious, "Find Previous", "Select the previous search match", EUserInterfaceActionType::Button, FInputChord(EModifierKey::Shift, EKeys::F3));
 }
 
 // ---- FMarkdownAssetEditorToolkit ----
@@ -254,6 +161,12 @@ const FName FMarkdownAssetEditorToolkit::OutlineTabId(TEXT("MarkdownAssetEditor_
 FMarkdownAssetEditorToolkit::~FMarkdownAssetEditorToolkit()
 {
 	FMarkdownEditorCommands::Unregister();
+
+	if (SettingsChangedHandle.IsValid() && UObjectInitialized())
+	{
+		GetMutableDefault<UMarkdownEditorSettings>()->OnSettingsChanged.Remove(SettingsChangedHandle);
+		SettingsChangedHandle.Reset();
+	}
 
 	if (GEditor)
 	{
@@ -322,6 +235,9 @@ void FMarkdownAssetEditorToolkit::Initialize(UMarkdownAsset* InMarkdownAsset, co
 
 	RegisterToolbar();
 	RegenerateMenusAndToolbars();
+
+	SettingsChangedHandle = GetMutableDefault<UMarkdownEditorSettings>()->OnSettingsChanged.AddSP(
+		this, &FMarkdownAssetEditorToolkit::HandleSettingsChanged);
 }
 
 FName FMarkdownAssetEditorToolkit::GetToolkitFName() const
@@ -348,26 +264,73 @@ FLinearColor FMarkdownAssetEditorToolkit::GetWorldCentricTabColorScale() const
 
 void FMarkdownAssetEditorToolkit::OnTextChanged(const FText& NewText)
 {
-	if (MarkdownAsset)
+	ApplyTextToAsset(NewText.ToString());
+}
+
+void FMarkdownAssetEditorToolkit::ApplyTextToAsset(const FString& NewText)
+{
+	if (!MarkdownAsset)
+	{
+		return;
+	}
+
+	// Programmatic SetText calls (Replace All, line-prefix insertion) and the
+	// widget's own change notification can both land here; only record a
+	// transaction when the text actually differs.
+	if (MarkdownAsset->RawMarkdownText != NewText)
 	{
 		{
 			FScopedTransaction Transaction(LOCTEXT("EditMarkdownText", "Edit Markdown Text"));
 			MarkdownAsset->Modify();
-			MarkdownAsset->RawMarkdownText = NewText.ToString();
+			MarkdownAsset->RawMarkdownText = NewText;
 		}
 		MarkdownAsset->MarkPackageDirty();
-
-		if (GEditor)
-		{
-			GEditor->GetTimerManager()->ClearTimer(PreviewUpdateTimerHandle);
-			GEditor->GetTimerManager()->SetTimer(
-				PreviewUpdateTimerHandle,
-				FTimerDelegate::CreateSP(this, &FMarkdownAssetEditorToolkit::UpdatePreview),
-				0.3f,
-				false
-			);
-		}
 	}
+
+	SchedulePreviewUpdate();
+}
+
+void FMarkdownAssetEditorToolkit::SchedulePreviewUpdate()
+{
+	if (!GEditor)
+	{
+		return;
+	}
+
+	const UMarkdownEditorSettings* Settings = GetDefault<UMarkdownEditorSettings>();
+	const float Delay = Settings ? Settings->PreviewUpdateDelay : 0.3f;
+
+	GEditor->GetTimerManager()->ClearTimer(PreviewUpdateTimerHandle);
+	if (Delay <= KINDA_SMALL_NUMBER)
+	{
+		UpdatePreview();
+		return;
+	}
+
+	GEditor->GetTimerManager()->SetTimer(
+		PreviewUpdateTimerHandle,
+		FTimerDelegate::CreateSP(this, &FMarkdownAssetEditorToolkit::UpdatePreview),
+		Delay,
+		false
+	);
+}
+
+void FMarkdownAssetEditorToolkit::HandleSettingsChanged()
+{
+	if (EditableTextBox.IsValid())
+	{
+		EditableTextBox->SetFont(GetEditorFont());
+	}
+
+	// Theme changes need a full preview rebuild.
+	UpdatePreview();
+}
+
+FSlateFontInfo FMarkdownAssetEditorToolkit::GetEditorFont()
+{
+	const UMarkdownEditorSettings* Settings = GetDefault<UMarkdownEditorSettings>();
+	const int32 FontSize = Settings ? FMath::Clamp(Settings->EditorFontSize, 6, 48) : 12;
+	return FCoreStyle::GetDefaultFontStyle("Mono", FontSize);
 }
 
 void FMarkdownAssetEditorToolkit::UpdatePreview()
@@ -377,11 +340,16 @@ void FMarkdownAssetEditorToolkit::UpdatePreview()
 	if (MarkdownAsset && WebBrowserWidget.IsValid())
 	{
 		FString ParsedHtml = MarkdownAsset->GetParsedHTML();
-		ParsedHtml = MarkBrokenLinks(ParsedHtml);
+		ParsedHtml = MarkdownLinkUtils::MarkBrokenLinks(ParsedHtml);
 		ParsedHtml = MarkdownOutline::InjectHeadingAnchors(ParsedHtml);
 		ParsedHtml = MarkdownImageUtils::EmbedTextureImages(ParsedHtml);
 
-		FString StyledHtml = MarkdownPreviewUtils::GenerateStyledHtml(ParsedHtml);
+		MarkdownPreviewUtils::FStyledHtmlOptions Options;
+		if (const UMarkdownEditorSettings* Settings = GetDefault<UMarkdownEditorSettings>())
+		{
+			Options.Theme = Settings->PreviewTheme;
+		}
+		FString StyledHtml = MarkdownPreviewUtils::GenerateStyledHtml(ParsedHtml, Options);
 
 		// Explicitly convert FString (UTF-16) to UTF-8 bytes before Base64 encoding
 		FTCHARToUTF8 Utf8Html(*StyledHtml);
@@ -412,6 +380,10 @@ void FMarkdownAssetEditorToolkit::BindCommands()
 	ToolkitCommands->MapAction(Commands.HorizontalRule, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnHorizontalRule));
 	ToolkitCommands->MapAction(Commands.Blockquote, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnBlockquote));
 	ToolkitCommands->MapAction(Commands.PasteImage, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnPasteImage));
+	ToolkitCommands->MapAction(Commands.Find, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnFind));
+	ToolkitCommands->MapAction(Commands.Replace, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnReplace));
+	ToolkitCommands->MapAction(Commands.FindNext, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnFindNext));
+	ToolkitCommands->MapAction(Commands.FindPrevious, FExecuteAction::CreateSP(this, &FMarkdownAssetEditorToolkit::OnFindPrevious));
 }
 
 void FMarkdownAssetEditorToolkit::RegisterToolbar()
@@ -497,6 +469,11 @@ void FMarkdownAssetEditorToolkit::ExtendToolbar(FToolBarBuilder& ToolBarBuilder)
 
 	// Images
 	AddCenteredToolBarButton(ToolBarBuilder, Commands.PasteImage, LOCTEXT("PasteImage", "Img"));
+
+	ToolBarBuilder.AddSeparator();
+
+	// Search
+	AddCenteredToolBarButton(ToolBarBuilder, Commands.Find, LOCTEXT("FindButton", "Find"));
 }
 
 // ---- Markdown Formatting Helpers ----
@@ -569,6 +546,7 @@ void FMarkdownAssetEditorToolkit::InsertAtLineStart(const FString& Prefix)
 
 	EditableTextBox->SetText(FText::FromString(TextStr));
 	EditableTextBox->GoTo(FTextLocation(LineIndex, Offset + Prefix.Len()));
+	ApplyTextToAsset(TextStr);
 }
 
 void FMarkdownAssetEditorToolkit::InsertTextAtCursor(const FString& Text)
@@ -677,6 +655,432 @@ void FMarkdownAssetEditorToolkit::OnPasteImage()
 	FSlateNotificationManager::Get().AddNotification(Info);
 }
 
+void FMarkdownAssetEditorToolkit::OnAssetsDropped(const TArray<FAssetData>& DroppedAssets)
+{
+	if (!EditableTextBox.IsValid())
+	{
+		return;
+	}
+
+	FString Snippet;
+	for (const FAssetData& Asset : DroppedAssets)
+	{
+		if (!Asset.IsValid())
+		{
+			continue;
+		}
+
+		if (!Snippet.IsEmpty())
+		{
+			Snippet += LINE_TERMINATOR;
+		}
+
+		// Resolving the class only loads the UClass (not the asset) for native types,
+		// which is all BuildMarkdownLinkForAsset needs to pick the link syntax.
+		Snippet += MarkdownLinkUtils::BuildMarkdownLinkForAsset(
+			Asset.PackageName.ToString(), Asset.AssetName.ToString(), Asset.GetClass());
+	}
+
+	if (Snippet.IsEmpty())
+	{
+		return;
+	}
+
+	InsertTextAtCursor(Snippet);
+	FSlateApplication::Get().SetKeyboardFocus(EditableTextBox);
+}
+
+// ---- Find & Replace ----
+
+TSharedRef<SWidget> FMarkdownAssetEditorToolkit::BuildSearchBar()
+{
+	const FMargin ButtonPadding(2.0f, 0.0f, 0.0f, 0.0f);
+
+	return SNew(SBorder)
+		.BorderImage(FAppStyle::GetBrush("ToolPanel.GroupBorder"))
+		.Padding(FMargin(4.0f))
+		.Visibility_Lambda([this]() { return bSearchBarVisible ? EVisibility::Visible : EVisibility::Collapsed; })
+		[
+			SNew(SVerticalBox)
+
+			// Find row
+			+ SVerticalBox::Slot()
+			.AutoHeight()
+			[
+				SNew(SHorizontalBox)
+
+				+ SHorizontalBox::Slot()
+				.FillWidth(1.0f)
+				[
+					SAssignNew(FindTextBox, SEditableTextBox)
+					.HintText(LOCTEXT("FindHint", "Find"))
+					.OnTextChanged(this, &FMarkdownAssetEditorToolkit::OnFindTextChanged)
+					.OnKeyDownHandler(FOnKeyDown::CreateSP(this, &FMarkdownAssetEditorToolkit::OnSearchBoxKeyDown, false))
+				]
+
+				+ SHorizontalBox::Slot()
+				.AutoWidth()
+				.VAlign(VAlign_Center)
+				.Padding(FMargin(6.0f, 0.0f))
+				[
+					SNew(SBox)
+					.MinDesiredWidth(70.0f)
+					[
+						SNew(STextBlock)
+						.Text(this, &FMarkdownAssetEditorToolkit::GetSearchStatusText)
+					]
+				]
+
+				+ SHorizontalBox::Slot()
+				.AutoWidth()
+				.VAlign(VAlign_Center)
+				.Padding(ButtonPadding)
+				[
+					SNew(SCheckBox)
+					.Style(FAppStyle::Get(), "ToggleButtonCheckbox")
+					.ToolTipText(LOCTEXT("MatchCaseTooltip", "Match case"))
+					.IsChecked_Lambda([this]() { return bSearchMatchCase ? ECheckBoxState::Checked : ECheckBoxState::Unchecked; })
+					.OnCheckStateChanged_Lambda([this](ECheckBoxState State)
+					{
+						bSearchMatchCase = (State == ECheckBoxState::Checked);
+						RefreshSearchMatches(true);
+					})
+					[
+						SNew(STextBlock)
+						.Text(LOCTEXT("MatchCaseLabel", "Aa"))
+						.Margin(FMargin(4.0f, 0.0f))
+					]
+				]
+
+				+ SHorizontalBox::Slot()
+				.AutoWidth()
+				.Padding(ButtonPadding)
+				[
+					SNew(SButton)
+					.Text(LOCTEXT("FindPreviousButton", "Prev"))
+					.ToolTipText(LOCTEXT("FindPreviousTooltip", "Select the previous match (Shift+F3)"))
+					.OnClicked_Lambda([this]() { OnFindPrevious(); return FReply::Handled(); })
+				]
+
+				+ SHorizontalBox::Slot()
+				.AutoWidth()
+				.Padding(ButtonPadding)
+				[
+					SNew(SButton)
+					.Text(LOCTEXT("FindNextButton", "Next"))
+					.ToolTipText(LOCTEXT("FindNextTooltip", "Select the next match (F3)"))
+					.OnClicked_Lambda([this]() { OnFindNext(); return FReply::Handled(); })
+				]
+
+				+ SHorizontalBox::Slot()
+				.AutoWidth()
+				.VAlign(VAlign_Center)
+				.Padding(ButtonPadding)
+				[
+					SNew(SCheckBox)
+					.Style(FAppStyle::Get(), "ToggleButtonCheckbox")
+					.ToolTipText(LOCTEXT("ToggleReplaceTooltip", "Show the Replace row (Ctrl+H)"))
+					.IsChecked_Lambda([this]() { return bReplaceRowVisible ? ECheckBoxState::Checked : ECheckBoxState::Unchecked; })
+					.OnCheckStateChanged_Lambda([this](ECheckBoxState State)
+					{
+						bReplaceRowVisible = (State == ECheckBoxState::Checked);
+					})
+					[
+						SNew(STextBlock)
+						.Text(LOCTEXT("ToggleReplaceLabel", "Replace"))
+						.Margin(FMargin(4.0f, 0.0f))
+					]
+				]
+
+				+ SHorizontalBox::Slot()
+				.AutoWidth()
+				.Padding(ButtonPadding)
+				[
+					SNew(SButton)
+					.Text(LOCTEXT("CloseSearchButton", "X"))
+					.ToolTipText(LOCTEXT("CloseSearchTooltip", "Close (Esc)"))
+					.OnClicked_Lambda([this]() { HideSearchBar(); return FReply::Handled(); })
+				]
+			]
+
+			// Replace row
+			+ SVerticalBox::Slot()
+			.AutoHeight()
+			.Padding(FMargin(0.0f, 4.0f, 0.0f, 0.0f))
+			[
+				SNew(SHorizontalBox)
+				.Visibility_Lambda([this]() { return bReplaceRowVisible ? EVisibility::Visible : EVisibility::Collapsed; })
+
+				+ SHorizontalBox::Slot()
+				.FillWidth(1.0f)
+				[
+					SAssignNew(ReplaceTextBox, SEditableTextBox)
+					.HintText(LOCTEXT("ReplaceHint", "Replace with"))
+					.OnKeyDownHandler(FOnKeyDown::CreateSP(this, &FMarkdownAssetEditorToolkit::OnSearchBoxKeyDown, true))
+				]
+
+				+ SHorizontalBox::Slot()
+				.AutoWidth()
+				.Padding(ButtonPadding)
+				[
+					SNew(SButton)
+					.Text(LOCTEXT("ReplaceButton", "Replace"))
+					.ToolTipText(LOCTEXT("ReplaceTooltip", "Replace the selected match and move to the next one"))
+					.OnClicked_Lambda([this]() { ReplaceCurrentMatch(); return FReply::Handled(); })
+				]
+
+				+ SHorizontalBox::Slot()
+				.AutoWidth()
+				.Padding(ButtonPadding)
+				[
+					SNew(SButton)
+					.Text(LOCTEXT("ReplaceAllButton", "Replace All"))
+					.ToolTipText(LOCTEXT("ReplaceAllTooltip", "Replace every match in the document"))
+					.OnClicked_Lambda([this]() { ReplaceAllMatches(); return FReply::Handled(); })
+				]
+			]
+		];
+}
+
+void FMarkdownAssetEditorToolkit::ShowSearchBar(bool bWithReplace)
+{
+	bSearchBarVisible = true;
+	bReplaceRowVisible = bReplaceRowVisible || bWithReplace;
+
+	// Seed the query from a single-line selection in the editor.
+	if (EditableTextBox.IsValid() && FindTextBox.IsValid())
+	{
+		const FString Selected = EditableTextBox->GetSelectedText().ToString();
+		if (!Selected.IsEmpty() && !Selected.Contains(TEXT("\n")) && !Selected.Contains(TEXT("\r")))
+		{
+			FindTextBox->SetText(FText::FromString(Selected));
+		}
+	}
+
+	if (FindTextBox.IsValid())
+	{
+		FSlateApplication::Get().SetKeyboardFocus(FindTextBox);
+		FindTextBox->SelectAllText();
+	}
+
+	RefreshSearchMatches(true);
+}
+
+void FMarkdownAssetEditorToolkit::HideSearchBar()
+{
+	bSearchBarVisible = false;
+
+	if (EditableTextBox.IsValid())
+	{
+		FSlateApplication::Get().SetKeyboardFocus(EditableTextBox);
+	}
+}
+
+void FMarkdownAssetEditorToolkit::OnFind()
+{
+	ShowSearchBar(false);
+}
+
+void FMarkdownAssetEditorToolkit::OnReplace()
+{
+	ShowSearchBar(true);
+}
+
+void FMarkdownAssetEditorToolkit::OnFindNext()
+{
+	if (!bSearchBarVisible)
+	{
+		ShowSearchBar(false);
+		return;
+	}
+	SelectAdjacentMatch(true);
+}
+
+void FMarkdownAssetEditorToolkit::OnFindPrevious()
+{
+	if (!bSearchBarVisible)
+	{
+		ShowSearchBar(false);
+		return;
+	}
+	SelectAdjacentMatch(false);
+}
+
+void FMarkdownAssetEditorToolkit::OnFindTextChanged(const FText& NewText)
+{
+	RefreshSearchMatches(true);
+}
+
+FReply FMarkdownAssetEditorToolkit::OnSearchBoxKeyDown(const FGeometry& Geometry, const FKeyEvent& KeyEvent, bool bIsReplaceBox)
+{
+	const FKey Key = KeyEvent.GetKey();
+
+	if (Key == EKeys::Escape)
+	{
+		HideSearchBar();
+		return FReply::Handled();
+	}
+
+	if (Key == EKeys::Enter)
+	{
+		if (bIsReplaceBox)
+		{
+			ReplaceCurrentMatch();
+		}
+		else
+		{
+			SelectAdjacentMatch(!KeyEvent.IsShiftDown());
+		}
+		return FReply::Handled();
+	}
+
+	return FReply::Unhandled();
+}
+
+FString FMarkdownAssetEditorToolkit::GetEditorText() const
+{
+	return EditableTextBox.IsValid() ? EditableTextBox->GetText().ToString() : FString();
+}
+
+void FMarkdownAssetEditorToolkit::RefreshSearchMatches(bool bSelectNearest)
+{
+	const FString Query = FindTextBox.IsValid() ? FindTextBox->GetText().ToString() : FString();
+	const FString Text = GetEditorText();
+
+	SearchMatches = MarkdownTextSearch::FindAll(Text, Query, bSearchMatchCase);
+	CurrentMatchIndex = INDEX_NONE;
+
+	if (!bSelectNearest || SearchMatches.Num() == 0 || !EditableTextBox.IsValid())
+	{
+		return;
+	}
+
+	// Keep the selection anchored where the user is: start from the beginning of
+	// the current selection so that extending the query keeps the same match.
+	const int32 FromOffset = MarkdownTextSearch::TextLocationToOffset(Text, EditableTextBox->GetSelection().GetBeginning());
+	SelectMatch(MarkdownTextSearch::FindNextMatchIndex(SearchMatches, FromOffset, true));
+}
+
+void FMarkdownAssetEditorToolkit::SelectAdjacentMatch(bool bForward)
+{
+	if (!EditableTextBox.IsValid())
+	{
+		return;
+	}
+
+	// The text may have changed since the last search (typing in the editor).
+	RefreshSearchMatches(false);
+	if (SearchMatches.Num() == 0)
+	{
+		return;
+	}
+
+	const FString Text = GetEditorText();
+	const FTextSelection Selection = EditableTextBox->GetSelection();
+	const int32 FromOffset = bForward
+		? MarkdownTextSearch::TextLocationToOffset(Text, Selection.GetEnd())
+		: MarkdownTextSearch::TextLocationToOffset(Text, Selection.GetBeginning());
+
+	SelectMatch(MarkdownTextSearch::FindNextMatchIndex(SearchMatches, FromOffset, bForward));
+}
+
+void FMarkdownAssetEditorToolkit::SelectMatch(int32 MatchIndex)
+{
+	if (!EditableTextBox.IsValid() || !SearchMatches.IsValidIndex(MatchIndex))
+	{
+		CurrentMatchIndex = INDEX_NONE;
+		return;
+	}
+
+	const FString Text = GetEditorText();
+	const FMarkdownTextMatch& Match = SearchMatches[MatchIndex];
+	const FTextLocation Start = MarkdownTextSearch::OffsetToTextLocation(Text, Match.Start);
+	const FTextLocation End = MarkdownTextSearch::OffsetToTextLocation(Text, Match.End());
+
+	EditableTextBox->SelectText(Start, End);
+	EditableTextBox->ScrollTo(Start);
+	CurrentMatchIndex = MatchIndex;
+}
+
+void FMarkdownAssetEditorToolkit::ReplaceCurrentMatch()
+{
+	if (!EditableTextBox.IsValid() || !FindTextBox.IsValid())
+	{
+		return;
+	}
+
+	const FString Query = FindTextBox->GetText().ToString();
+	if (Query.IsEmpty())
+	{
+		return;
+	}
+
+	const FString Replacement = ReplaceTextBox.IsValid() ? ReplaceTextBox->GetText().ToString() : FString();
+	const FString Selected = EditableTextBox->GetSelectedText().ToString();
+	const bool bSelectionIsMatch = bSearchMatchCase ? Selected.Equals(Query, ESearchCase::CaseSensitive) : Selected.Equals(Query, ESearchCase::IgnoreCase);
+
+	if (bSelectionIsMatch)
+	{
+		// InsertTextAtCursor replaces the selection and fires OnTextChanged,
+		// which syncs the asset and schedules the preview refresh.
+		EditableTextBox->InsertTextAtCursor(Replacement);
+	}
+
+	SelectAdjacentMatch(true);
+}
+
+void FMarkdownAssetEditorToolkit::ReplaceAllMatches()
+{
+	if (!EditableTextBox.IsValid() || !FindTextBox.IsValid())
+	{
+		return;
+	}
+
+	const FString Query = FindTextBox->GetText().ToString();
+	if (Query.IsEmpty())
+	{
+		return;
+	}
+
+	const FString Replacement = ReplaceTextBox.IsValid() ? ReplaceTextBox->GetText().ToString() : FString();
+
+	int32 ReplacedCount = 0;
+	const FString NewText = MarkdownTextSearch::ReplaceAll(GetEditorText(), Query, Replacement, bSearchMatchCase, ReplacedCount);
+	if (ReplacedCount == 0)
+	{
+		return;
+	}
+
+	EditableTextBox->SetText(FText::FromString(NewText));
+	ApplyTextToAsset(NewText);
+	RefreshSearchMatches(false);
+
+	FNotificationInfo Info(FText::Format(LOCTEXT("ReplaceAllDone", "Replaced {0} occurrence(s)."), ReplacedCount));
+	Info.ExpireDuration = 3.0f;
+	FSlateNotificationManager::Get().AddNotification(Info);
+}
+
+FText FMarkdownAssetEditorToolkit::GetSearchStatusText() const
+{
+	const FString Query = FindTextBox.IsValid() ? FindTextBox->GetText().ToString() : FString();
+	if (Query.IsEmpty())
+	{
+		return FText::GetEmpty();
+	}
+
+	if (SearchMatches.Num() == 0)
+	{
+		return LOCTEXT("SearchNoResults", "No results");
+	}
+
+	if (CurrentMatchIndex == INDEX_NONE)
+	{
+		return FText::Format(LOCTEXT("SearchMatchCount", "{0} match(es)"), SearchMatches.Num());
+	}
+
+	return FText::Format(LOCTEXT("SearchMatchPosition", "{0} of {1}"), CurrentMatchIndex + 1, SearchMatches.Num());
+}
+
 // ---- Tab Spawning ----
 
 TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabArgs& Args)
@@ -690,14 +1094,30 @@ TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabA
 			SNew(SSplitter)
 			.Orientation(Orient_Horizontal)
 
-			// Left Panel: Raw Markdown Editor
+			// Left Panel: Find bar + raw Markdown editor (accepts Content Browser drops)
 			+ SSplitter::Slot()
 			.Value(0.5f)
 			[
-				SAssignNew(EditableTextBox, SMultiLineEditableTextBox)
-				.Text(InitialText)
-				.OnTextChanged(this, &FMarkdownAssetEditorToolkit::OnTextChanged)
-				.Font(FCoreStyle::GetDefaultFontStyle("Mono", 12))
+				SNew(SVerticalBox)
+
+				+ SVerticalBox::Slot()
+				.AutoHeight()
+				[
+					BuildSearchBar()
+				]
+
+				+ SVerticalBox::Slot()
+				.FillHeight(1.0f)
+				[
+					SNew(SMarkdownAssetDropTarget)
+					.OnAssetsDropped(FOnMarkdownAssetsDropped::CreateSP(this, &FMarkdownAssetEditorToolkit::OnAssetsDropped))
+					[
+						SAssignNew(EditableTextBox, SMultiLineEditableTextBox)
+						.Text(InitialText)
+						.OnTextChanged(this, &FMarkdownAssetEditorToolkit::OnTextChanged)
+						.Font(GetEditorFont())
+					]
+				]
 			]
 
 			// Right Panel: HTML Preview
@@ -1000,7 +1420,7 @@ void FMarkdownAssetEditorToolkit::OpenLinkedClass(const FString& ClassName)
 	}
 
 	// Native UClass lookup against reflection names (UHT strips A/U/I prefixes).
-	for (const FString& Candidate : BuildClassNameCandidates(ClassName))
+	for (const FString& Candidate : MarkdownLinkUtils::BuildClassNameCandidates(ClassName))
 	{
 		UClass* FoundClass = FindFirstObject<UClass>(*Candidate, EFindFirstObjectOptions::NativeFirst);
 		if (FoundClass && FoundClass->HasAnyClassFlags(CLASS_Native))

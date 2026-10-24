@@ -10,11 +10,15 @@
 #include "Framework/Commands/UICommandList.h"
 #include "Widgets/Views/SListView.h"
 #include "MarkdownOutline.h"
+#include "MarkdownTextSearch.h"
 
 class UMarkdownAsset;
 class SMultiLineEditableTextBox;
+class SEditableTextBox;
 class SWebBrowser;
 struct FWebNavigationRequest;
+struct FAssetData;
+struct FSlateFontInfo;
 class ITableRow;
 class STableViewBase;
 
@@ -56,6 +60,14 @@ public:
 	TSharedPtr<FUICommandInfo> Blockquote;
 	/** Command to create a texture asset from the clipboard image and insert a link. */
 	TSharedPtr<FUICommandInfo> PasteImage;
+	/** Command to open the Find bar. */
+	TSharedPtr<FUICommandInfo> Find;
+	/** Command to open the Find bar with the Replace row expanded. */
+	TSharedPtr<FUICommandInfo> Replace;
+	/** Command to jump to the next search match. */
+	TSharedPtr<FUICommandInfo> FindNext;
+	/** Command to jump to the previous search match. */
+	TSharedPtr<FUICommandInfo> FindPrevious;
 };
 
 /**
@@ -93,6 +105,18 @@ public:
 private:
 	/** Called when the user modifies text in the editor; updates the asset and schedules a preview refresh. */
 	void OnTextChanged(const FText& NewText);
+
+	/** Writes the given text into the asset (inside a transaction) when it differs, then schedules a preview refresh. */
+	void ApplyTextToAsset(const FString& NewText);
+
+	/** Schedules a debounced preview / outline refresh using the delay from the editor settings. */
+	void SchedulePreviewUpdate();
+
+	/** Re-applies theme / font preferences after Editor Preferences > Markdown Editor changes. */
+	void HandleSettingsChanged();
+
+	/** Returns the monospace editor font at the size configured in the editor settings. */
+	static FSlateFontInfo GetEditorFont();
 
 	/** Refreshes the HTML preview by parsing the current Markdown and loading it into the web browser widget. */
 	void UpdatePreview();
@@ -160,6 +184,56 @@ private:
 	/** Creates a texture asset from the clipboard image and inserts an image link. */
 	void OnPasteImage();
 
+	/** Inserts Markdown links for assets dropped from the Content Browser at the cursor. */
+	void OnAssetsDropped(const TArray<FAssetData>& DroppedAssets);
+
+	// ---- Find & Replace ----
+
+	/** Builds the Find & Replace bar shown above the text editor. */
+	TSharedRef<SWidget> BuildSearchBar();
+
+	/** Shows the search bar, optionally with the replace row, seeded from the current selection. */
+	void ShowSearchBar(bool bWithReplace);
+
+	/** Hides the search bar and returns focus to the text editor. */
+	void HideSearchBar();
+
+	/** Opens the Find bar (Ctrl+F). */
+	void OnFind();
+	/** Opens the Find bar with the Replace row (Ctrl+H). */
+	void OnReplace();
+	/** Selects the next match (F3 / Enter in the find box). */
+	void OnFindNext();
+	/** Selects the previous match (Shift+F3 / Shift+Enter in the find box). */
+	void OnFindPrevious();
+
+	/** Re-runs the search when the query text changes. */
+	void OnFindTextChanged(const FText& NewText);
+
+	/** Handles Enter / Shift+Enter / Escape inside the find and replace boxes. */
+	FReply OnSearchBoxKeyDown(const FGeometry& Geometry, const FKeyEvent& KeyEvent, bool bIsReplaceBox);
+
+	/** Recomputes the match list for the current query; optionally selects the match nearest the cursor. */
+	void RefreshSearchMatches(bool bSelectNearest);
+
+	/** Moves the selection to the match after (or before) the current selection, wrapping around. */
+	void SelectAdjacentMatch(bool bForward);
+
+	/** Selects the given match in the text editor and scrolls it into view. */
+	void SelectMatch(int32 MatchIndex);
+
+	/** Replaces the currently selected match with the replacement text, then selects the next one. */
+	void ReplaceCurrentMatch();
+
+	/** Replaces every match in the document with the replacement text. */
+	void ReplaceAllMatches();
+
+	/** Returns the "n of m" / "No results" label shown next to the find box. */
+	FText GetSearchStatusText() const;
+
+	/** Returns the flat editor text used for searching. */
+	FString GetEditorText() const;
+
 	/** Intercepts navigation in the preview browser to handle mdasset:// links. */
 	bool HandleBeforeNavigation(const FString& Url, const FWebNavigationRequest& Request);
 
@@ -184,6 +258,24 @@ private:
 	TSharedPtr<SWebBrowser> WebBrowserWidget;
 	/** The command list that maps UI commands to formatting actions. */
 	TSharedPtr<FUICommandList> ToolkitCommands;
+
+	/** Delegate handle for the editor settings change notification. */
+	FDelegateHandle SettingsChangedHandle;
+
+	/** Search query box of the Find bar. */
+	TSharedPtr<SEditableTextBox> FindTextBox;
+	/** Replacement text box of the Find bar. */
+	TSharedPtr<SEditableTextBox> ReplaceTextBox;
+	/** Whether the Find bar is shown above the editor. */
+	bool bSearchBarVisible = false;
+	/** Whether the Replace row of the Find bar is expanded. */
+	bool bReplaceRowVisible = false;
+	/** Whether searches are case-sensitive. */
+	bool bSearchMatchCase = false;
+	/** Matches of the current query in the editor text, in document order. */
+	TArray<FMarkdownTextMatch> SearchMatches;
+	/** Index into SearchMatches of the currently selected match, or INDEX_NONE. */
+	int32 CurrentMatchIndex = INDEX_NONE;
 
 	/** Headings currently shown in the outline panel. */
 	TArray<TSharedPtr<FMarkdownHeading>> OutlineItems;

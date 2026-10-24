@@ -115,4 +115,59 @@ bool FMarkdownPreviewStyledHtmlTest::RunTest(const FString& Parameters)
 	return true;
 }
 
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FMarkdownPreviewThemeTest,
+	"MarkdownAsset.Preview.StyledHtmlThemes",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
+bool FMarkdownPreviewThemeTest::RunTest(const FString& Parameters)
+{
+	MarkdownPreviewUtils::FStyledHtmlOptions DarkOptions;
+	DarkOptions.Theme = EMarkdownPreviewTheme::Dark;
+	const FString Dark = MarkdownPreviewUtils::GenerateStyledHtml(TEXT("<p>x</p>"), DarkOptions);
+
+	MarkdownPreviewUtils::FStyledHtmlOptions LightOptions;
+	LightOptions.Theme = EMarkdownPreviewTheme::Light;
+	const FString Light = MarkdownPreviewUtils::GenerateStyledHtml(TEXT("<p>x</p>"), LightOptions);
+
+	TestTrue(TEXT("Dark theme uses the dark background"), Dark.Contains(TEXT("background-color: #1e1e1e")));
+	TestTrue(TEXT("Light theme uses a white background"), Light.Contains(TEXT("background-color: #ffffff")));
+	TestFalse(TEXT("Light theme does not carry the dark background"), Light.Contains(TEXT("#1e1e1e")));
+
+	TestEqual(TEXT("Default overload is the dark preview"),
+		MarkdownPreviewUtils::GenerateStyledHtml(TEXT("<p>x</p>")), Dark);
+
+	// Both themes keep the preview lockdown and the link styling hooks.
+	for (const FString* Html : { &Dark, &Light })
+	{
+		TestTrue(TEXT("CSP is present"), Html->Contains(TEXT("default-src 'none'")));
+		TestTrue(TEXT("Broken-link class is styled"), Html->Contains(TEXT("a.md-broken-link")));
+		TestTrue(TEXT("Missing-image class is styled"), Html->Contains(TEXT("span.md-missing-image")));
+		TestTrue(TEXT("Wikilink scheme is styled"), Html->Contains(TEXT("a[href^=\"mdasset://\"]")));
+	}
+
+	return true;
+}
+
+IMPLEMENT_SIMPLE_AUTOMATION_TEST(FMarkdownPreviewStyledHtmlOptionsTest,
+	"MarkdownAsset.Preview.StyledHtmlOptions",
+	EAutomationTestFlags::EditorContext | EAutomationTestFlags::ProductFilter)
+bool FMarkdownPreviewStyledHtmlOptionsTest::RunTest(const FString& Parameters)
+{
+	MarkdownPreviewUtils::FStyledHtmlOptions Options;
+	Options.bIncludeContentSecurityPolicy = false;
+	Options.Title = TEXT("A <b>\"quoted\"</b> & title");
+
+	const FString Html = MarkdownPreviewUtils::GenerateStyledHtml(TEXT("<p>x</p>"), Options);
+
+	TestFalse(TEXT("CSP can be omitted for export"), Html.Contains(TEXT("Content-Security-Policy")));
+	TestTrue(TEXT("Title is emitted and HTML-escaped"),
+		Html.Contains(TEXT("<title>A &lt;b&gt;&quot;quoted&quot;&lt;/b&gt; &amp; title</title>")));
+	TestTrue(TEXT("Charset meta stays first"), Html.Contains(TEXT("<meta charset=\"utf-8\">")));
+
+	TestEqual(TEXT("EscapeHtml escapes the four reserved characters"),
+		MarkdownPreviewUtils::EscapeHtml(TEXT("<a href=\"x\">&</a>")),
+		FString(TEXT("&lt;a href=&quot;x&quot;&gt;&amp;&lt;/a&gt;")));
+
+	return true;
+}
+
 #endif // WITH_DEV_AUTOMATION_TESTS

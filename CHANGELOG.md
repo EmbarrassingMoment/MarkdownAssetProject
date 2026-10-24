@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Find & Replace** — New search bar above the text editor (Ctrl+F opens it, Ctrl+H opens it with the Replace row). Enter / F3 selects the next match, Shift+Enter / Shift+F3 the previous one (wrapping around), Esc closes the bar. The bar shows "n of m" / "No results", has a case-sensitivity toggle, and **Replace** / **Replace All** buttons; Replace All runs inside the editor transaction so it can be undone
+- **Markdown Editor Preferences** — New **Editor Preferences > Plugins > Markdown Editor** page with the preview theme, the preview refresh delay (previously fixed at 0.3 s), the editor font size, and the Content Browser folder that receives pasted images (previously fixed at `/Game/Markdown/Images`). Open Markdown editors apply changes immediately
+- **Light Preview Theme** — The HTML preview can now use a light color scheme in addition to the dark one; both themes keep the link / broken-link / missing-image styling and the Content-Security-Policy
+- **Drag & Drop Links** — Dropping assets from the Content Browser onto the text editor inserts the matching Markdown at the cursor: `[[Name]]` for Markdown assets, `![Name](/Game/Path)` for textures, and `[Name](/Game/Path)` for everything else (Blueprints, materials, ...). Multiple assets are inserted one per line
+- **Standalone HTML Export** — **Asset Actions > Export** now offers "Standalone HTML File" (`.html`) next to the `.md` exporter. The file contains the rendered Markdown with the preview CSS of the selected theme, heading anchors, and referenced project textures embedded as PNG `data:` URIs, written as UTF-8. The preview-only Content-Security-Policy is omitted so ordinary external images render in a browser
+- **Feature Tour Sample** — `docs/samples/MD_FeatureTour_1_5.md` is an importable Markdown document with step-by-step checks for every 1.5.0 feature (expected match counts, drop targets, export checks)
+- **Automation Tests** — New tests for the search helpers (`MarkdownAsset.Search.*`), the dropped-asset link syntax and class-name resolution (`MarkdownAsset.Links.*`), the standalone HTML export (`MarkdownAsset.Export.*`), and the themed / option-driven preview document (`MarkdownAsset.Preview.StyledHtmlThemes`, `StyledHtmlOptions`)
+
+### Changed
+
+- **Preview Texture Cache** — Textures embedded in the preview are now PNG-encoded once and cached per package path (invalidated when the texture's source data changes, bounded at 64 MB) instead of being re-encoded on every debounced refresh
+- **Link Helpers Extracted** — The broken-link detection and class-name resolution moved from the editor toolkit into the `MarkdownLinkUtils` namespace so the HTML exporter can share them; runtime behavior is unchanged
+- **Toolbar** — Added a **Find** button after the Paste Image button
+
 ## [1.4.0] - 2026-08-26
 
 ### Added
