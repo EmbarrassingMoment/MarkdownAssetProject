@@ -9,7 +9,7 @@
 
 カスタムMarkdownアセットタイプとライブプレビューエディタを追加するUnreal Engine 5.5以降用プラグイン。
 
-![エディタ概観](docs/images/editor-overview-ja.png)
+![エディタ概観](docs/images/editor-overview-ja.webp)
 
 ## 機能
 
@@ -34,9 +34,9 @@
 - **ローカライズ** — エディタUIは英語と日本語に対応しています。
 - **マルチバイト文字対応** — 日本語などのマルチバイト文字を含むMarkdownテキストを正しく処理・表示できます。
 
-![ダークテーマプレビュー](docs/images/dark-theme-preview.png)
+![ダークテーマプレビュー](docs/images/dark-theme-preview.webp)
 
-![コンテンツブラウザのサムネイル](docs/images/content-browser-thumbnail.png)
+![コンテンツブラウザのサムネイル](docs/images/content-browser-thumbnail.webp)
 
 ### キーボードショートカット
 
@@ -59,7 +59,7 @@
 | 置換 | Ctrl+H |
 | 次 / 前の一致へ | F3 / Shift+F3 |
 
-![ツールバーショートカット](docs/images/toolbar-shortcuts.png)
+![ツールバーショートカット](docs/images/toolbar-shortcuts.webp)
 
 ## 要件
 
@@ -82,9 +82,9 @@
 2. アセットをダブルクリックしてMarkdownエディタを開きます。
 3. 左側のペインにMarkdownを記述すると、右側のペインでHTMLプレビューがリアルタイムに更新されます。
 
-![アセットの作成](docs/images/create-asset.gif)
+![アセットの作成](docs/images/create-asset.webp)
 
-![ライブプレビュー](docs/images/live-preview.gif)
+![ライブプレビュー](docs/images/live-preview.webp)
 
 ### インポート / エクスポート
 
@@ -165,7 +165,7 @@ Unrealアセットリンクとして認識されるパスルート: `/Game/`, `/
 - **GetPlainText** は、Markdown / HTML の描画ができない UMG Widget や 3D テキストで Markdown コンテンツを表示する場合に便利です。
 - **GetRawMarkdownText** は、ソースの Markdown をそのまま返します。将来の拡張（カスタムレンダリングパイプラインなど）を想定しています。
 
-![Blueprintノード](docs/images/blueprint-nodes.png)
+![Blueprintノード](docs/images/blueprint-nodes.webp)
 
 `UMarkitdownBlueprintLibrary` (エディタ専用) は Editor Utility Widget やエディタスクリプトから呼び出せる一括変換ヘルパーを提供します:
 

@@ -10,7 +10,7 @@
 
 An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-preview editor.
 
-![Editor Overview](docs/images/editor-overview.png)
+![Editor Overview](docs/images/editor-overview.webp)
 
 ## Features
 
@@ -34,9 +34,9 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 - **Security** — Raw HTML blocks and inline HTML are disabled by default to prevent XSS when rendering user-supplied Markdown. The preview browser's navigation handler uses a strict allowlist — only `data:`, `about:`, `mdasset://`, `ueasset://`, `class://`, and `http(s)://` are permitted; unknown schemes such as `javascript:` and `file:` are blocked to prevent script execution or local file access from untrusted Markdown content. A `Content-Security-Policy` header (`default-src 'none'; style-src 'unsafe-inline'; img-src data:`) is injected into every preview page, blocking external network requests (images, fetch/XHR, frames) to prevent IP tracking and SSRF against local services. External `http(s)://` links always prompt a confirmation dialog displaying the full URL before opening in the system browser, mitigating phishing via crafted Markdown assets
 - **Localization** — Editor UI is fully localized for English and Japanese
 
-![Dark Theme Preview](docs/images/dark-theme-preview.png)
+![Dark Theme Preview](docs/images/dark-theme-preview.webp)
 
-![Content Browser Thumbnails](docs/images/content-browser-thumbnail.png)
+![Content Browser Thumbnails](docs/images/content-browser-thumbnail.webp)
 
 ### Keyboard Shortcuts
 
@@ -59,7 +59,7 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 | Replace | Ctrl+H |
 | Find Next / Previous | F3 / Shift+F3 |
 
-![Toolbar Shortcuts](docs/images/toolbar-shortcuts.png)
+![Toolbar Shortcuts](docs/images/toolbar-shortcuts.webp)
 
 ## Requirements
 
@@ -82,9 +82,9 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 2. Double-click the asset to open the Markdown editor.
 3. Write Markdown in the left pane — the right pane updates the HTML preview in real time.
 
-![Create Asset](docs/images/create-asset.gif)
+![Create Asset](docs/images/create-asset.webp)
 
-![Live Preview](docs/images/live-preview.gif)
+![Live Preview](docs/images/live-preview.webp)
 
 ### Import / Export
 
@@ -165,7 +165,7 @@ Path roots recognised as Unreal asset links: `/Game/`, `/Engine/`, `/Plugins/`, 
 - **GetPlainText** is useful for displaying Markdown content in UMG Widgets or 3D text, where Markdown / HTML rendering is not available.
 - **GetRawMarkdownText** returns the source Markdown, intended for future extensibility (e.g., custom rendering pipelines).
 
-![Blueprint Nodes](docs/images/blueprint-nodes.png)
+![Blueprint Nodes](docs/images/blueprint-nodes.webp)
 
 `UMarkitdownBlueprintLibrary` (editor-only) provides batch-conversion helpers callable from Editor Utility Widgets and editor scripts:
 

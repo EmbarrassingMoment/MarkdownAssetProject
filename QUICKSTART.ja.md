@@ -22,9 +22,9 @@ Markdown Editor プラグインを数分でセットアップして使い始め�
 
 > **ヒント:** コンテンツブラウザに含まれている `MD_Sample` アセットを開くと、サンプルを確認できます。
 
-![アセットの作成](docs/images/create-asset.gif)
+![アセットの作成](docs/images/create-asset.webp)
 
-![ライブプレビュー](docs/images/live-preview.gif)
+![ライブプレビュー](docs/images/live-preview.webp)
 
 ## 3. インポートとエクスポート
 
@@ -44,7 +44,7 @@ Markdown Editor プラグインを数分でセットアップして使い始め�
 | `GetRawMarkdownText` | 生の Markdown ソースを返します |
 | `GetPlainText` | Markdown 記号を除去したプレーンテキストを返します |
 
-![Blueprintノード](docs/images/blueprint-nodes.png)
+![Blueprintノード](docs/images/blueprint-nodes.webp)
 
 ## 5. Wikilink でアセット間をリンクする
 
