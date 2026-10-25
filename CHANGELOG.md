@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.5.0] - 2026-10-26
 
 ### Added
 
@@ -13,7 +13,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 - **Markdown Editor Preferences** — New **Editor Preferences > Plugins > Markdown Editor** page with the preview theme, the preview refresh delay (previously fixed at 0.3 s), the editor font size, and the Content Browser folder that receives pasted images (previously fixed at `/Game/Markdown/Images`). Open Markdown editors apply changes immediately
 - **Light Preview Theme** — The HTML preview can now use a light color scheme in addition to the dark one; both themes keep the link / broken-link / missing-image styling and the Content-Security-Policy
 - **Drag & Drop Links** — Dropping assets from the Content Browser onto the text editor inserts the matching Markdown at the cursor: `[[Name]]` for Markdown assets, `![Name](/Game/Path)` for textures, and `[Name](/Game/Path)` for everything else (Blueprints, materials, ...). Multiple assets are inserted one per line
-- **Standalone HTML Export** — **Asset Actions > Export** now offers "Standalone HTML File" (`.html`) next to the `.md` exporter. The file contains the rendered Markdown with the preview CSS of the selected theme, heading anchors, and referenced project textures embedded as PNG `data:` URIs, written as UTF-8. The preview-only Content-Security-Policy is omitted so ordinary external images render in a browser
+- **Standalone HTML Export** — **Asset Actions > Export** now offers "Standalone HTML File" (`.html`) next to the `.md` exporter. The file contains the rendered Markdown with the preview CSS of the selected theme, heading anchors, and referenced project textures embedded as PNG `data:` URIs, written as UTF-8. The exported page keeps a Content-Security-Policy that blocks scripts (including `javascript:` links from untrusted Markdown) and external requests other than `http(s)` images, so ordinary external images still render in a browser
 - **Feature Tour Sample** — `docs/samples/MD_FeatureTour_1_5.md` is an importable Markdown document with step-by-step checks for every 1.5.0 feature (expected match counts, drop targets, export checks)
 - **Automation Tests** — New tests for the search helpers (`MarkdownAsset.Search.*`), the dropped-asset link syntax and class-name resolution (`MarkdownAsset.Links.*`), the standalone HTML export (`MarkdownAsset.Export.*`), and the themed / option-driven preview document (`MarkdownAsset.Preview.StyledHtmlThemes`, `StyledHtmlOptions`)
 

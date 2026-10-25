@@ -63,6 +63,7 @@ Note->RawMarkdownText = TEXT("# Hello");
 - Asset link, broken (red): [Missing asset](/Game/DoesNotExist_Tour)
 - Class link, valid: [AActor](class://AActor)
 - Class link, broken (red): [NoSuchClass](class://NoSuchClass_Tour)
+- Script link (blocked in the preview and in the HTML export): [alert](javascript:alert(1))
 
 ### 2.2 Images
 
@@ -118,6 +119,7 @@ the Content Browser onto the text editor. The tooltip changes to
    - The page uses the theme selected in Editor Preferences (`<title>` is the asset name).
    - The gauge images from section 2.2 are embedded (no `/Game/` paths, the file works offline).
    - The external badge image **does** load here, unlike in the editor preview.
+   - Clicking the script link from section 2.1 does nothing (the export's CSP blocks `javascript:` URLs).
    - Headings carry `id="md-h-N"` anchors; `file.html#md-h-3` jumps to a section.
    - Non-ASCII text survives as UTF-8: こんにちは、Markdown。
 4. Export again as **Markdown File (*.md)** to confirm the original exporter still works.

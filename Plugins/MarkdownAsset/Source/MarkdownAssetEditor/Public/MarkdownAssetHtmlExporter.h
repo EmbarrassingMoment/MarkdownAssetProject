@@ -29,7 +29,8 @@ public:
 	/**
 	 * Builds the standalone HTML document for a Markdown asset: md4c output with
 	 * broken-link marking, heading anchors, embedded textures and the themed CSS.
-	 * The Content-Security-Policy of the in-editor preview is omitted so that
+	 * The document keeps a Content-Security-Policy that blocks scripts (including
+	 * javascript: links from untrusted Markdown) but allows http(s) images so that
 	 * ordinary external images render when the file is opened in a browser.
 	 */
 	static FString BuildStandaloneHtml(const UMarkdownAsset* MarkdownAsset, EMarkdownPreviewTheme Theme);

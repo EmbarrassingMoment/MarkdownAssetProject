@@ -29,6 +29,15 @@ namespace MarkdownPreviewUtils
 		Block,
 	};
 
+	/** Which Content-Security-Policy the generated document carries. */
+	enum class EContentSecurityPolicy : uint8
+	{
+		/** In-editor preview: no scripts and no external requests; images only from data: URIs. */
+		Preview,
+		/** Standalone HTML export: still no scripts, but http(s) images may load in the user's browser. */
+		StandaloneExport,
+	};
+
 	/** Options controlling how the parsed HTML is wrapped into a full document. */
 	struct FStyledHtmlOptions
 	{
@@ -36,11 +45,11 @@ namespace MarkdownPreviewUtils
 		EMarkdownPreviewTheme Theme = EMarkdownPreviewTheme::Dark;
 
 		/**
-		 * Emit the Content-Security-Policy meta tag that locks the in-editor preview
-		 * down (no scripts, no external requests). The standalone HTML export turns
-		 * this off so that regular external images render in the user's browser.
+		 * Content-Security-Policy emitted as a meta tag. Both policies block script
+		 * execution (including javascript: links); the standalone export additionally
+		 * allows http(s) images so that regular external images render in a browser.
 		 */
-		bool bIncludeContentSecurityPolicy = true;
+		EContentSecurityPolicy ContentSecurityPolicy = EContentSecurityPolicy::Preview;
 
 		/** Optional document title; emitted as <title> when non-empty. */
 		FString Title;

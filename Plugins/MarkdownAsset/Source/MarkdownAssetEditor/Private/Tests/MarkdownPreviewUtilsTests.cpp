@@ -102,7 +102,7 @@ bool FMarkdownPreviewStyledHtmlTest::RunTest(const FString& Parameters)
 	TestTrue(TEXT("CSP allows inline styles only"),
 		Html.Contains(TEXT("style-src 'unsafe-inline'")));
 	TestTrue(TEXT("CSP restricts images to data: URIs"),
-		Html.Contains(TEXT("img-src data:")));
+		Html.Contains(TEXT("img-src data:;")));
 
 	TestTrue(TEXT("Parsed content is embedded in the document"),
 		Html.Contains(TEXT("<p>content</p>")));
@@ -153,12 +153,13 @@ IMPLEMENT_SIMPLE_AUTOMATION_TEST(FMarkdownPreviewStyledHtmlOptionsTest,
 bool FMarkdownPreviewStyledHtmlOptionsTest::RunTest(const FString& Parameters)
 {
 	MarkdownPreviewUtils::FStyledHtmlOptions Options;
-	Options.bIncludeContentSecurityPolicy = false;
+	Options.ContentSecurityPolicy = MarkdownPreviewUtils::EContentSecurityPolicy::StandaloneExport;
 	Options.Title = TEXT("A <b>\"quoted\"</b> & title");
 
 	const FString Html = MarkdownPreviewUtils::GenerateStyledHtml(TEXT("<p>x</p>"), Options);
 
-	TestFalse(TEXT("CSP can be omitted for export"), Html.Contains(TEXT("Content-Security-Policy")));
+	TestTrue(TEXT("Export CSP still denies scripts by default"), Html.Contains(TEXT("default-src 'none'")));
+	TestTrue(TEXT("Export CSP allows external images"), Html.Contains(TEXT("img-src data: http: https:")));
 	TestTrue(TEXT("Title is emitted and HTML-escaped"),
 		Html.Contains(TEXT("<title>A &lt;b&gt;&quot;quoted&quot;&lt;/b&gt; &amp; title</title>")));
 	TestTrue(TEXT("Charset meta stays first"), Html.Contains(TEXT("<meta charset=\"utf-8\">")));

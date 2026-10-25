@@ -1,9 +1,9 @@
 {
 	"FileVersion": 3,
-	"Version": 5,
-	"VersionName": "1.4.0",
+	"Version": 6,
+	"VersionName": "1.5.0",
 	"FriendlyName": "MarkdownAsset",
-	"Description": "A custom Markdown asset type with a split-pane live preview editor and heading outline panel. Supports GFM (tables, task lists, strikethrough), wikilinks, and asset/class links. Import/export .md files directly from Content Browser, and convert PDF/DOCX/PPTX/HTML documents to Markdown via markitdown.",
+	"Description": "A custom Markdown asset type with a split-pane live preview editor (dark / light themes), heading outline panel, and find & replace. Supports GFM (tables, task lists, strikethrough), wikilinks, and asset/class links, including drag & drop from the Content Browser. Import/export .md files directly from Content Browser, export standalone HTML, and convert PDF/DOCX/PPTX/HTML documents to Markdown via markitdown.",
 	"Category": "Editor",
 	"CreatedBy": "Kurorekishi",
 	"CreatedByURL": "https://github.com/EmbarrassingMoment",

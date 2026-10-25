@@ -15,7 +15,7 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 ## Features
 
 - **Custom Markdown Asset** — `UMarkdownAsset` stores raw Markdown text as a first-class UObject
-- **Live HTML Preview** — Dual-pane editor with a text editor on the left and a real-time HTML preview on the right (updates with a 0.3-second debounce for smooth editing)
+- **Live HTML Preview** — Dual-pane editor with a text editor on the left and a real-time HTML preview on the right (updates after a short debounce for smooth editing — 0.3 s by default, configurable in Editor Preferences)
 - **Outline Panel** — A docked panel listing every heading (H1–H6) in the document as an indented tree; clicking an entry jumps both the text editor and the HTML preview to that heading
 - **Image Preview & Clipboard Paste** — Reference project textures with `![Alt](/Game/Path/To/Texture)`; the preview loads the `UTexture2D` and embeds it as a PNG `data:` URI, so no external network access is needed and the CSP stays locked down. Unresolvable texture paths render a red placeholder. The **Paste Image** toolbar button (Ctrl+Shift+V, Windows) creates a texture asset under `/Game/Markdown/Images/` from the clipboard image and inserts the link — screenshots can go straight into a spec document without leaving the editor
 - **Find & Replace** — Ctrl+F opens a search bar above the editor (Ctrl+H adds the Replace row). Enter / F3 and Shift+Enter / Shift+F3 step through the matches with wrap-around, the bar shows "n of m", a toggle enables case-sensitive search, and **Replace** / **Replace All** are undoable
@@ -90,7 +90,7 @@ An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-
 
 - **Import**: Drag a `.md` or `.markdown` file into the Content Browser to create a Markdown asset.
 - **Reimport**: Right-click an imported asset and select **Reimport** to reload from the original source file.
-- **Export**: Right-click a Markdown asset and select **Asset Actions > Export** to save it as a `.md` file, or pick **Standalone HTML File** in the file type dropdown to write a self-contained `.html` (UTF-8, preview CSS of the selected theme, heading anchors, referenced textures embedded as PNG `data:` URIs). The preview-only Content-Security-Policy is not included in the export so regular external images render in a browser.
+- **Export**: Right-click a Markdown asset and select **Asset Actions > Export** to save it as a `.md` file, or pick **Standalone HTML File** in the file type dropdown to write a self-contained `.html` (UTF-8, preview CSS of the selected theme, heading anchors, referenced textures embedded as PNG `data:` URIs). The exported page carries its own Content-Security-Policy (`default-src 'none'; style-src 'unsafe-inline'; img-src data: http: https:`): scripts — including `javascript:` links in untrusted Markdown — stay blocked, while regular external images render in a browser.
 
 ### Editor Preferences
 

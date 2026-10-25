@@ -145,11 +145,11 @@ FString MarkdownPreviewUtils::GenerateStyledHtml(const FString& ParsedHtml, cons
 
 	FString Head;
 	Head += TEXT("<meta charset=\"utf-8\">\n");
-	if (Options.bIncludeContentSecurityPolicy)
-	{
-		Head += TEXT("<meta http-equiv=\"Content-Security-Policy\""
-			" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src data:;\">\n");
-	}
+	const TCHAR* ImgSrc = Options.ContentSecurityPolicy == EContentSecurityPolicy::StandaloneExport
+		? TEXT("data: http: https:")
+		: TEXT("data:");
+	Head += FString::Printf(TEXT("<meta http-equiv=\"Content-Security-Policy\""
+		" content=\"default-src 'none'; style-src 'unsafe-inline'; img-src %s;\">\n"), ImgSrc);
 	if (!Options.Title.IsEmpty())
 	{
 		Head += FString::Printf(TEXT("<title>%s</title>\n"), *EscapeHtml(Options.Title));

@@ -50,7 +50,7 @@ FString UMarkdownAssetHtmlExporter::BuildStandaloneHtml(const UMarkdownAsset* Ma
 
 	MarkdownPreviewUtils::FStyledHtmlOptions Options;
 	Options.Theme = Theme;
-	Options.bIncludeContentSecurityPolicy = false;
+	Options.ContentSecurityPolicy = MarkdownPreviewUtils::EContentSecurityPolicy::StandaloneExport;
 	Options.Title = MarkdownAsset->GetName();
 
 	return MarkdownPreviewUtils::GenerateStyledHtml(ParsedHtml, Options);
