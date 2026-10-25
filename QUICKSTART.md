@@ -22,9 +22,9 @@ Get up and running with the Markdown Editor plugin in minutes.
 
 > **Tip:** You can also open the included `MD_Sample` asset in the Content Browser to see an example.
 
-![Create Asset](docs/images/create-asset.gif)
+![Create Asset](docs/images/create-asset.webp)
 
-![Live Preview](docs/images/live-preview.gif)
+![Live Preview](docs/images/live-preview.webp)
 
 ## 3. Import & Export
 
@@ -44,7 +44,7 @@ Get up and running with the Markdown Editor plugin in minutes.
 | `GetRawMarkdownText` | Returns the raw Markdown source |
 | `GetPlainText` | Returns text with Markdown symbols stripped |
 
-![Blueprint Nodes](docs/images/blueprint-nodes.png)
+![Blueprint Nodes](docs/images/blueprint-nodes.webp)
 
 ## 5. Link Between Assets with Wikilinks
 
