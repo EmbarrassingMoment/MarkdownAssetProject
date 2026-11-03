@@ -13,7 +13,7 @@
 #include "MarkdownTextSearch.h"
 
 class UMarkdownAsset;
-class SMultiLineEditableTextBox;
+class SMarkdownEditableTextBox;
 class SEditableTextBox;
 class SWebBrowser;
 struct FWebNavigationRequest;
@@ -253,7 +253,7 @@ private:
 	TObjectPtr<UMarkdownAsset> MarkdownAsset;
 
 	/** The text editor widget for editing raw Markdown. */
-	TSharedPtr<SMultiLineEditableTextBox> EditableTextBox;
+	TSharedPtr<SMarkdownEditableTextBox> EditableTextBox;
 	/** The web browser widget for displaying the rendered HTML preview. */
 	TSharedPtr<SWebBrowser> WebBrowserWidget;
 	/** The command list that maps UI commands to formatting actions. */

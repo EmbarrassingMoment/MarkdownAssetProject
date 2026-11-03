@@ -21,7 +21,7 @@
 #include "Widgets/Notifications/SNotificationList.h"
 #include "Framework/Application/SlateApplication.h"
 #include "Widgets/Docking/SDockTab.h"
-#include "Widgets/Input/SMultiLineEditableTextBox.h"
+#include "SMarkdownEditableTextBox.h"
 #include "Widgets/Views/STableRow.h"
 #include "Widgets/Input/SButton.h"
 #include "Widgets/Text/STextBlock.h"
@@ -1112,7 +1112,7 @@ TSharedRef<SDockTab> FMarkdownAssetEditorToolkit::SpawnTab_Main(const FSpawnTabA
 					SNew(SMarkdownAssetDropTarget)
 					.OnAssetsDropped(FOnMarkdownAssetsDropped::CreateSP(this, &FMarkdownAssetEditorToolkit::OnAssetsDropped))
 					[
-						SAssignNew(EditableTextBox, SMultiLineEditableTextBox)
+						SAssignNew(EditableTextBox, SMarkdownEditableTextBox)
 						.Text(InitialText)
 						.OnTextChanged(this, &FMarkdownAssetEditorToolkit::OnTextChanged)
 						.Font(GetEditorFont())
