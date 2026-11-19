@@ -2,11 +2,12 @@
 
 > **日本語版はこちら: [README.ja.md](README.ja.md)**
 
-![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.5%2B-blue)
-![License: MIT](https://img.shields.io/badge/License-MIT-green)
-![Platform: Windows](https://img.shields.io/badge/Platform-Windows-lightgrey)
-[![Sponsor](https://img.shields.io/badge/Sponsor-EmbarrassingMoment-ff69b4?logo=github-sponsors&logoColor=white)](https://github.com/sponsors/EmbarrassingMoment)
-[![Available on FAB](https://img.shields.io/badge/FAB-Available-blue?logo=unrealengine&logoColor=white)](https://www.fab.com/listings/21ba464a-d8fa-48f5-833d-6894dbe9fe95)
+[![Available on Fab](https://img.shields.io/badge/Fab-Available-0096FF?style=flat&logo=epicgames&logoColor=white)](https://www.fab.com/listings/21ba464a-d8fa-48f5-833d-6894dbe9fe95)
+[![Unreal Engine](https://img.shields.io/badge/Unreal%20Engine-5.5%2B-black?style=flat&logo=unrealengine&logoColor=white)](https://www.unrealengine.com/)
+[![Version](https://img.shields.io/badge/Version-1.5.0-brightgreen?style=flat)](CHANGELOG.md)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=flat)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Win64-blue?style=flat)](Plugins/MarkdownAsset/MarkdownAsset.uplugin)
+[![Sponsor](https://img.shields.io/badge/Sponsor-EmbarrassingMoment-ff69b4?style=flat&logo=github-sponsors&logoColor=white)](https://github.com/sponsors/EmbarrassingMoment)
 
 An Unreal Engine 5.5+ plugin that adds a custom Markdown asset type with a live-preview editor.
 
